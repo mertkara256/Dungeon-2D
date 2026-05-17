@@ -12,6 +12,7 @@ namespace Dungeon2D
     {
         private Dungeon2DGame game;
         private Dungeon2DArtLibrary art;
+        private Dungeon2DUITheme theme;
         private Font font;
         private Canvas canvas;
         private GameObject mainMenuRoot;
@@ -45,6 +46,7 @@ namespace Dungeon2D
         {
             game = owner;
             art = artLibrary;
+            theme = Dungeon2DUITheme.Load();
             font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             if (font == null)
             {
@@ -224,7 +226,28 @@ namespace Dungeon2D
                 button.onClick.AddListener(delegate { onSelected(index); });
                 PerkChoice2D choice = choices[i];
                 Image background = button.GetComponent<Image>();
-                background.color = CardColor(choice.Rarity);
+                Sprite cardSprite = theme != null ? theme.GetPerkCard(choice.Rarity) : null;
+                if (cardSprite != null)
+                {
+                    ApplySprite(background, cardSprite, Image.Type.Sliced);
+                }
+                else
+                {
+                    background.sprite = null;
+                    background.color = CardColor(choice.Rarity);
+                }
+
+                Transform iconTransform = button.transform.Find("UpgradeIcon");
+                if (iconTransform != null)
+                {
+                    Image iconImage = iconTransform.GetComponent<Image>();
+                    if (iconImage != null)
+                    {
+                        iconImage.sprite = theme != null ? theme.GetUpgradeIcon(choice.UpgradeType) : null;
+                        iconImage.enabled = iconImage.sprite != null;
+                    }
+                }
+
                 Text[] texts = button.GetComponentsInChildren<Text>(true);
                 texts[0].text = choice.Title + "\n" + choice.Rarity;
                 texts[1].text = choice.Description;
@@ -268,12 +291,24 @@ namespace Dungeon2D
             mainMenuRoot = CreateRect("MainMenu", canvas.transform).gameObject;
             Stretch(mainMenuRoot.GetComponent<RectTransform>(), Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
-            Image background = CreateImage("MenuBackground", mainMenuRoot.transform, new Color(0.025f, 0.028f, 0.035f, 0.96f));
+            Image background = CreateImage("MenuBackground", mainMenuRoot.transform, Color.white);
+            if (!ApplySprite(background, theme != null ? theme.MenuBackground : null, Image.Type.Simple))
+            {
+                background.color = new Color(0.025f, 0.028f, 0.035f, 0.96f);
+            }
             Stretch(background.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
-            Image hero = CreateImage("MenuHeroPanel", mainMenuRoot.transform, new Color(0.08f, 0.075f, 0.09f, 0.95f));
-            hero.sprite = art.GetEnvironmentSprite(EnvironmentSpriteId.Panel);
-            SetFixed(hero.rectTransform, new Vector2(0.5f, 0.72f), new Vector2(820f, 210f), Vector2.zero);
+            Image shade = CreateImage("MenuShade", mainMenuRoot.transform, new Color(0f, 0f, 0f, 0.2f));
+            Stretch(shade.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+
+            Image hero = CreateImage("MenuHeroPanel", mainMenuRoot.transform, Color.white);
+            if (!ApplySprite(hero, theme != null ? theme.TitlePlaque : null, Image.Type.Sliced))
+            {
+                hero.color = new Color(0.08f, 0.075f, 0.09f, 0.95f);
+                hero.sprite = art.GetEnvironmentSprite(EnvironmentSpriteId.Panel);
+            }
+
+            SetFixed(hero.rectTransform, new Vector2(0.5f, 0.72f), new Vector2(860f, 214f), Vector2.zero);
 
             Text title = CreateText("Title", hero.transform, "ECHO DUNGEON 2D", 48, new Color(0.93f, 0.91f, 0.85f, 1f), TextAnchor.MiddleCenter);
             Stretch(title.rectTransform, new Vector2(0.08f, 0.42f), new Vector2(0.92f, 0.92f), Vector2.zero, Vector2.zero);
@@ -300,8 +335,12 @@ namespace Dungeon2D
             Button quit = CreateButton(buttonPanel.transform, "QUIT", new Color(0.62f, 0.66f, 0.72f, 1f));
             quit.onClick.AddListener(Application.Quit);
 
-            Text footer = CreateText("MenuFooter", mainMenuRoot.transform, "Enter/Space starts. WASD move, mouse aim, LMB shoot, RMB melee.", 16, new Color(0.72f, 0.74f, 0.78f, 1f), TextAnchor.MiddleCenter);
-            SetFixed(footer.rectTransform, new Vector2(0.5f, 0.08f), new Vector2(760f, 40f), Vector2.zero);
+            Image footerPanel = CreatePanel("MenuFooterPanel", mainMenuRoot.transform);
+            SetFixed(footerPanel.rectTransform, new Vector2(0.5f, 0.08f), new Vector2(780f, 46f), Vector2.zero);
+            ApplySprite(footerPanel, theme != null ? theme.Notification : null, Image.Type.Sliced);
+
+            Text footer = CreateText("MenuFooter", footerPanel.transform, "Enter/Space starts. WASD move, mouse aim, LMB shoot, RMB melee.", 16, new Color(0.86f, 0.88f, 0.88f, 1f), TextAnchor.MiddleCenter);
+            Stretch(footer.rectTransform, new Vector2(0.04f, 0f), new Vector2(0.96f, 1f), Vector2.zero, Vector2.zero);
 
             BuildHowToPlay();
         }
@@ -314,9 +353,8 @@ namespace Dungeon2D
             Image blocker = CreateImage("Blocker", howToPlayRoot.transform, new Color(0f, 0f, 0f, 0.55f));
             Stretch(blocker.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
-            Image panel = CreateImage("HowToPlayPanel", howToPlayRoot.transform, new Color(0.05f, 0.054f, 0.07f, 0.98f));
-            panel.sprite = art.GetEnvironmentSprite(EnvironmentSpriteId.Panel);
-            SetFixed(panel.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(720f, 430f), Vector2.zero);
+            Image panel = CreatePanel("HowToPlayPanel", howToPlayRoot.transform);
+            SetFixed(panel.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(760f, 454f), Vector2.zero);
 
             Text title = CreateText("HowTitle", panel.transform, "HOW TO PLAY", 30, Color.white, TextAnchor.MiddleCenter);
             Stretch(title.rectTransform, new Vector2(0.08f, 0.82f), new Vector2(0.92f, 0.96f), Vector2.zero, Vector2.zero);
@@ -365,8 +403,10 @@ namespace Dungeon2D
             Stretch(scoreText.rectTransform, new Vector2(0.45f, 0.78f), new Vector2(0.94f, 0.95f), Vector2.zero, Vector2.zero);
 
             Image healthTrack = CreateImage("HealthTrack", panel.transform, new Color(0f, 0f, 0f, 0.42f));
+            ApplySprite(healthTrack, theme != null ? theme.BarTrack : null, Image.Type.Sliced);
             Stretch(healthTrack.rectTransform, new Vector2(0.06f, 0.54f), new Vector2(0.94f, 0.72f), Vector2.zero, Vector2.zero);
             healthFill = CreateImage("HealthFill", healthTrack.transform, new Color(0.82f, 0.12f, 0.16f, 1f));
+            ApplySprite(healthFill, theme != null ? theme.HealthFill : null, Image.Type.Sliced);
             healthFillRect = healthFill.rectTransform;
             Stretch(healthFillRect, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             healthText = CreateText("HealthText", healthTrack.transform, "100 / 100", 16, Color.white, TextAnchor.MiddleCenter);
@@ -380,14 +420,15 @@ namespace Dungeon2D
         private Text CreateItemBadge(Transform parent, string label, Sprite icon, Vector2 anchor)
         {
             Image badge = CreateImage("Item_" + label, parent, new Color(1f, 1f, 1f, 0.07f));
-            SetFixed(badge.rectTransform, anchor, new Vector2(94f, 44f), Vector2.zero);
+            ApplySprite(badge, theme != null ? theme.ItemBadge : null, Image.Type.Sliced);
+            SetFixed(badge.rectTransform, anchor, new Vector2(84f, 64f), Vector2.zero);
 
             Image iconImage = CreateImage("Icon", badge.transform, Color.white);
             iconImage.sprite = icon;
-            Stretch(iconImage.rectTransform, new Vector2(0.04f, 0.14f), new Vector2(0.42f, 0.86f), Vector2.zero, Vector2.zero);
+            Stretch(iconImage.rectTransform, new Vector2(0.1f, 0.18f), new Vector2(0.54f, 0.82f), Vector2.zero, Vector2.zero);
 
             Text count = CreateText("Count", badge.transform, "0", 20, Color.white, TextAnchor.MiddleRight);
-            Stretch(count.rectTransform, new Vector2(0.45f, 0f), new Vector2(0.9f, 1f), Vector2.zero, Vector2.zero);
+            Stretch(count.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.9f, 1f), Vector2.zero, Vector2.zero);
             return count;
         }
 
@@ -413,8 +454,10 @@ namespace Dungeon2D
             Stretch(bossText.rectTransform, new Vector2(0.04f, 0.48f), new Vector2(0.96f, 0.94f), Vector2.zero, Vector2.zero);
 
             Image track = CreateImage("BossTrack", panel.transform, new Color(0f, 0f, 0f, 0.44f));
+            ApplySprite(track, theme != null ? theme.BarTrack : null, Image.Type.Sliced);
             Stretch(track.rectTransform, new Vector2(0.04f, 0.12f), new Vector2(0.96f, 0.42f), Vector2.zero, Vector2.zero);
             bossFill = CreateImage("BossFill", track.transform, new Color(0.75f, 0.12f, 0.85f, 1f));
+            ApplySprite(bossFill, theme != null ? theme.BossFill : null, Image.Type.Sliced);
             bossFillRect = bossFill.rectTransform;
             Stretch(bossFillRect, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             bossPanelRoot.SetActive(false);
@@ -424,6 +467,7 @@ namespace Dungeon2D
         {
             Image panel = CreatePanel("Notification", hudRoot.transform);
             SetFixed(panel.rectTransform, new Vector2(0.5f, 0.78f), new Vector2(560f, 46f), Vector2.zero);
+            ApplySprite(panel, theme != null ? theme.Notification : null, Image.Type.Sliced);
             notificationGroup = panel.gameObject.AddComponent<CanvasGroup>();
             notificationGroup.alpha = 0f;
             notificationGroup.blocksRaycasts = false;
@@ -436,6 +480,7 @@ namespace Dungeon2D
         {
             Image panel = CreatePanel("InteractionPrompt", hudRoot.transform);
             SetFixed(panel.rectTransform, new Vector2(0.5f, 0.18f), new Vector2(360f, 48f), Vector2.zero);
+            ApplySprite(panel, theme != null ? theme.Notification : null, Image.Type.Sliced);
             interactionGroup = panel.gameObject.AddComponent<CanvasGroup>();
             interactionGroup.alpha = 0f;
             interactionGroup.blocksRaycasts = false;
@@ -460,6 +505,7 @@ namespace Dungeon2D
         {
             Image bar = CreatePanel("ControlsBar", hudRoot.transform);
             SetFixed(bar.rectTransform, new Vector2(0.5f, 0.045f), new Vector2(880f, 40f), Vector2.zero);
+            ApplySprite(bar, theme != null ? theme.Notification : null, Image.Type.Sliced);
 
             Text text = CreateText("ControlsText", bar.transform, "WASD Move   Mouse Aim   LMB Shoot   RMB Melee   Shift Dash   Q Potion   1 Boost   E Interact   Esc Pause", 15, new Color(0.9f, 0.9f, 0.86f, 1f), TextAnchor.MiddleCenter);
             Stretch(text.rectTransform, new Vector2(0.02f, 0f), new Vector2(0.98f, 1f), Vector2.zero, Vector2.zero);
@@ -470,11 +516,18 @@ namespace Dungeon2D
             perkDraftRoot = CreateRect("PerkDraft", canvas.transform).gameObject;
             Stretch(perkDraftRoot.GetComponent<RectTransform>(), Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
-            Image overlay = CreateImage("Overlay", perkDraftRoot.transform, new Color(0.02f, 0.024f, 0.032f, 0.82f));
+            Image background = CreateImage("DraftBackground", perkDraftRoot.transform, Color.white);
+            if (!ApplySprite(background, theme != null ? theme.UpgradeBackground : null, Image.Type.Simple))
+            {
+                background.color = new Color(0.02f, 0.024f, 0.032f, 1f);
+            }
+            Stretch(background.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+
+            Image overlay = CreateImage("Overlay", perkDraftRoot.transform, new Color(0.02f, 0.024f, 0.032f, 0.58f));
             Stretch(overlay.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
             Image panel = CreatePanel("DraftPanel", perkDraftRoot.transform);
-            SetFixed(panel.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(1040f, 560f), Vector2.zero);
+            SetFixed(panel.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(1080f, 620f), Vector2.zero);
 
             draftTitleText = CreateText("DraftTitle", panel.transform, "Choose a Perk", 34, Color.white, TextAnchor.MiddleCenter);
             Stretch(draftTitleText.rectTransform, new Vector2(0.08f, 0.82f), new Vector2(0.92f, 0.96f), Vector2.zero, Vector2.zero);
@@ -486,7 +539,7 @@ namespace Dungeon2D
             for (int i = 0; i < 3; i++)
             {
                 Button card = CreatePerkCard(panel.transform, i + 1);
-                SetFixed(card.GetComponent<RectTransform>(), new Vector2(anchors[i], 0.39f), new Vector2(270f, 280f), Vector2.zero);
+                SetFixed(card.GetComponent<RectTransform>(), new Vector2(anchors[i], 0.38f), new Vector2(270f, 330f), Vector2.zero);
                 draftButtons.Add(card);
             }
 
@@ -495,21 +548,157 @@ namespace Dungeon2D
 
         private Button CreatePerkCard(Transform parent, int index)
         {
-            Image image = CreateImage("PerkCard_" + index, parent, new Color(0.13f, 0.14f, 0.18f, 0.96f));
+            Image image = CreateImage("PerkCard_" + index, parent, Color.white);
+            Sprite cardSprite = theme != null ? theme.GetPerkCard(PerkRarity2D.Common) : null;
+            if (!ApplySprite(image, cardSprite, Image.Type.Sliced))
+            {
+                image.color = new Color(0.13f, 0.14f, 0.18f, 0.96f);
+            }
+
             Button button = image.gameObject.AddComponent<Button>();
             button.targetGraphic = image;
 
+            Image icon = CreateImage("UpgradeIcon", image.transform, Color.white);
+            icon.preserveAspect = true;
+            SetFixed(icon.rectTransform, new Vector2(0.5f, 0.78f), new Vector2(82f, 82f), Vector2.zero);
+
             Text title = CreateText("Title", image.transform, "", 22, Color.white, TextAnchor.UpperCenter);
             title.horizontalOverflow = HorizontalWrapMode.Wrap;
-            Stretch(title.rectTransform, new Vector2(0.08f, 0.66f), new Vector2(0.92f, 0.92f), Vector2.zero, Vector2.zero);
+            Stretch(title.rectTransform, new Vector2(0.08f, 0.56f), new Vector2(0.92f, 0.72f), Vector2.zero, Vector2.zero);
 
             Text description = CreateText("Description", image.transform, "", 18, new Color(0.76f, 0.79f, 0.84f, 1f), TextAnchor.UpperCenter);
             description.horizontalOverflow = HorizontalWrapMode.Wrap;
-            Stretch(description.rectTransform, new Vector2(0.1f, 0.24f), new Vector2(0.9f, 0.62f), Vector2.zero, Vector2.zero);
+            Stretch(description.rectTransform, new Vector2(0.1f, 0.22f), new Vector2(0.9f, 0.52f), Vector2.zero, Vector2.zero);
 
             Text hotkey = CreateText("Hotkey", image.transform, "", 17, new Color(1f, 0.82f, 0.28f, 1f), TextAnchor.MiddleCenter);
             Stretch(hotkey.rectTransform, new Vector2(0.18f, 0.06f), new Vector2(0.82f, 0.18f), Vector2.zero, Vector2.zero);
             return button;
+        }
+
+        private sealed class Dungeon2DUITheme
+        {
+            public Sprite MenuBackground { get; private set; }
+            public Sprite UpgradeBackground { get; private set; }
+            public Sprite Panel { get; private set; }
+            public Sprite TitlePlaque { get; private set; }
+            public Sprite Button { get; private set; }
+            public Sprite ButtonHighlighted { get; private set; }
+            public Sprite ItemBadge { get; private set; }
+            public Sprite Notification { get; private set; }
+            public Sprite BarTrack { get; private set; }
+            public Sprite HealthFill { get; private set; }
+            public Sprite BossFill { get; private set; }
+            public Sprite CardCommon { get; private set; }
+            public Sprite CardUncommon { get; private set; }
+            public Sprite CardRare { get; private set; }
+            public Sprite IconHealth { get; private set; }
+            public Sprite IconDamage { get; private set; }
+            public Sprite IconAttackRate { get; private set; }
+            public Sprite IconMoveSpeed { get; private set; }
+            public Sprite IconProjectileSpeed { get; private set; }
+            public Sprite IconArmor { get; private set; }
+
+            public Sprite GetPerkCard(PerkRarity2D rarity)
+            {
+                switch (rarity)
+                {
+                    case PerkRarity2D.Rare:
+                        return CardRare;
+                    case PerkRarity2D.Uncommon:
+                        return CardUncommon;
+                    default:
+                        return CardCommon;
+                }
+            }
+
+            public Sprite GetUpgradeIcon(UpgradeType2D upgradeType)
+            {
+                switch (upgradeType)
+                {
+                    case UpgradeType2D.MaxHealth:
+                        return IconHealth;
+                    case UpgradeType2D.Damage:
+                        return IconDamage;
+                    case UpgradeType2D.AttackRate:
+                        return IconAttackRate;
+                    case UpgradeType2D.MoveSpeed:
+                        return IconMoveSpeed;
+                    case UpgradeType2D.ProjectileSpeed:
+                        return IconProjectileSpeed;
+                    case UpgradeType2D.Armor:
+                        return IconArmor;
+                    default:
+                        return null;
+                }
+            }
+
+            public static Dungeon2DUITheme Load()
+            {
+                Dungeon2DUITheme loaded = new Dungeon2DUITheme();
+
+                Texture2D menuBackground = Resources.Load<Texture2D>("Dungeon2D/UI/dungeon_menu_background");
+                if (menuBackground != null)
+                {
+                    loaded.MenuBackground = CreateFullSprite(menuBackground);
+                }
+
+                Texture2D upgradeBackground = Resources.Load<Texture2D>("Dungeon2D/UI/dungeon_upgrade_background");
+                if (upgradeBackground != null)
+                {
+                    loaded.UpgradeBackground = CreateFullSprite(upgradeBackground);
+                }
+
+                Texture2D atlas = Resources.Load<Texture2D>("Dungeon2D/UI/dungeon_ui_atlas");
+                if (atlas != null)
+                {
+                    loaded.Panel = CreateSlicedSprite(atlas, RectFromTopLeft(atlas, 41f, 18f, 684f, 484f), 58f);
+                    loaded.TitlePlaque = CreateSlicedSprite(atlas, RectFromTopLeft(atlas, 749f, 24f, 647f, 186f), 58f);
+                    loaded.Button = CreateSlicedSprite(atlas, RectFromTopLeft(atlas, 758f, 234f, 409f, 112f), 34f);
+                    loaded.ButtonHighlighted = CreateSlicedSprite(atlas, RectFromTopLeft(atlas, 758f, 371f, 408f, 116f), 34f);
+                    loaded.ItemBadge = CreateSlicedSprite(atlas, RectFromTopLeft(atlas, 65f, 516f, 172f, 159f), 28f);
+                    loaded.Notification = CreateSlicedSprite(atlas, RectFromTopLeft(atlas, 276f, 536f, 600f, 113f), 36f);
+                    loaded.BarTrack = CreateSlicedSprite(atlas, RectFromTopLeft(atlas, 22f, 685f, 768f, 111f), 34f);
+                    loaded.HealthFill = CreateSlicedSprite(atlas, RectFromTopLeft(atlas, 32f, 812f, 758f, 57f), 22f);
+                    loaded.BossFill = CreateSlicedSprite(atlas, RectFromTopLeft(atlas, 31f, 911f, 759f, 60f), 22f);
+                    loaded.CardCommon = CreateSlicedSprite(atlas, RectFromTopLeft(atlas, 823f, 691f, 210f, 303f), 34f);
+                    loaded.CardUncommon = CreateSlicedSprite(atlas, RectFromTopLeft(atlas, 1056f, 687f, 215f, 307f), 34f);
+                    loaded.CardRare = CreateSlicedSprite(atlas, RectFromTopLeft(atlas, 1292f, 687f, 211f, 307f), 34f);
+                }
+
+                Texture2D icons = Resources.Load<Texture2D>("Dungeon2D/UI/dungeon_upgrade_icons");
+                if (icons != null)
+                {
+                    loaded.IconHealth = CreateSimpleSprite(icons, RectFromTopLeft(icons, 78f, 42f, 419f, 444f));
+                    loaded.IconDamage = CreateSimpleSprite(icons, RectFromTopLeft(icons, 557f, 42f, 419f, 444f));
+                    loaded.IconAttackRate = CreateSimpleSprite(icons, RectFromTopLeft(icons, 1037f, 42f, 419f, 444f));
+                    loaded.IconMoveSpeed = CreateSimpleSprite(icons, RectFromTopLeft(icons, 78f, 527f, 419f, 446f));
+                    loaded.IconProjectileSpeed = CreateSimpleSprite(icons, RectFromTopLeft(icons, 557f, 527f, 419f, 446f));
+                    loaded.IconArmor = CreateSimpleSprite(icons, RectFromTopLeft(icons, 1037f, 528f, 419f, 445f));
+                }
+
+                return loaded;
+            }
+
+            private static Sprite CreateFullSprite(Texture2D texture)
+            {
+                return Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+            }
+
+            private static Sprite CreateSimpleSprite(Texture2D texture, Rect rect)
+            {
+                return Sprite.Create(texture, rect, new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+            }
+
+            private static Sprite CreateSlicedSprite(Texture2D texture, Rect rect, float border)
+            {
+                Vector4 safeBorder = new Vector4(border, border, border, border);
+                return Sprite.Create(texture, rect, new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect, safeBorder);
+            }
+
+            private static Rect RectFromTopLeft(Texture2D texture, float x, float y, float width, float height)
+            {
+                return new Rect(x, texture.height - y - height, width, height);
+            }
         }
 
         private IEnumerator NotificationRoutine(string message)
@@ -539,25 +728,60 @@ namespace Dungeon2D
         private Image CreatePanel(string name, Transform parent)
         {
             Image image = CreateImage(name, parent, new Color(0.045f, 0.052f, 0.065f, 0.86f));
-            image.sprite = art.GetEnvironmentSprite(EnvironmentSpriteId.Panel);
-            image.type = Image.Type.Simple;
+            if (!ApplySprite(image, theme != null ? theme.Panel : null, Image.Type.Sliced))
+            {
+                image.sprite = art.GetEnvironmentSprite(EnvironmentSpriteId.Panel);
+                image.type = Image.Type.Simple;
+            }
+
             return image;
         }
 
         private Button CreateButton(Transform parent, string label, Color accent)
         {
             Image image = CreateImage("Button_" + label, parent, new Color(0.095f, 0.102f, 0.13f, 0.96f));
+            ApplySprite(image, theme != null ? theme.Button : null, Image.Type.Sliced);
             LayoutElement element = image.gameObject.AddComponent<LayoutElement>();
             element.preferredHeight = 54f;
             Button button = image.gameObject.AddComponent<Button>();
             button.targetGraphic = image;
+            ConfigureButtonSprites(button);
 
             Image accentImage = CreateImage("Accent", image.transform, accent);
-            Stretch(accentImage.rectTransform, new Vector2(0f, 0f), new Vector2(0.022f, 1f), Vector2.zero, Vector2.zero);
+            accentImage.raycastTarget = false;
+            Stretch(accentImage.rectTransform, new Vector2(0.018f, 0.18f), new Vector2(0.032f, 0.82f), Vector2.zero, Vector2.zero);
 
             Text text = CreateText("Label", image.transform, label, 18, Color.white, TextAnchor.MiddleCenter);
             Stretch(text.rectTransform, Vector2.zero, Vector2.one, new Vector2(20f, 0f), new Vector2(-20f, 0f));
             return button;
+        }
+
+        private void ConfigureButtonSprites(Button button)
+        {
+            if (button == null || theme == null || theme.ButtonHighlighted == null)
+            {
+                return;
+            }
+
+            button.transition = Selectable.Transition.SpriteSwap;
+            SpriteState state = button.spriteState;
+            state.highlightedSprite = theme.ButtonHighlighted;
+            state.pressedSprite = theme.ButtonHighlighted;
+            state.selectedSprite = theme.ButtonHighlighted;
+            button.spriteState = state;
+        }
+
+        private static bool ApplySprite(Image image, Sprite sprite, Image.Type type)
+        {
+            if (image == null || sprite == null)
+            {
+                return false;
+            }
+
+            image.sprite = sprite;
+            image.type = type;
+            image.color = Color.white;
+            return true;
         }
 
         private Image CreateImage(string name, Transform parent, Color color)
