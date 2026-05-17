@@ -19,6 +19,7 @@ namespace Dungeon2D
         private Vector2 dashDirection;
         private float dashEndsAt;
         private float nextDashAt;
+        private float nextDashTrailAt;
         private float nextRangedAt;
         private float nextMeleeAt;
         private float lastDamageAt = -999f;
@@ -29,6 +30,7 @@ namespace Dungeon2D
         private const float DashDistance = 4.5f;
         private const float DashDuration = 0.12f;
         private const float DashCooldown = 0.45f;
+        private const float DashTrailInterval = 0.024f;
         private const float MeleeCooldown = 0.45f;
         private const float InvulnerabilityDuration = 0.25f;
 
@@ -104,6 +106,7 @@ namespace Dungeon2D
             IsDead = false;
             currentHealth = game.PlayerStats.MaxHealth;
             nextDashAt = 0f;
+            nextDashTrailAt = 0f;
             nextRangedAt = 0f;
             nextMeleeAt = 0f;
             speedBoostEndsAt = 0f;
@@ -161,6 +164,7 @@ namespace Dungeon2D
                 }
                 else
                 {
+                    SpawnDashTrail();
                     body.linearVelocity = dashDirection * (DashDistance / DashDuration);
                     return;
                 }
@@ -325,7 +329,22 @@ namespace Dungeon2D
             dashDirection = direction;
             dashEndsAt = Time.time + DashDuration;
             nextDashAt = Time.time + DashCooldown;
+            nextDashTrailAt = 0f;
             game.PlayDashFeedback(transform.position, direction);
+            SpawnDashTrail();
+        }
+
+        private void SpawnDashTrail()
+        {
+            if (game == null || Time.time < nextDashTrailAt)
+            {
+                return;
+            }
+
+            nextDashTrailAt = Time.time + DashTrailInterval;
+            Sprite sprite = spriteRenderer != null ? spriteRenderer.sprite : null;
+            bool flipX = spriteRenderer != null && spriteRenderer.flipX;
+            game.SpawnPlayerDashTrail(transform.position, dashDirection, sprite, transform.localScale, flipX);
         }
 
         private void HandleCombatInput()

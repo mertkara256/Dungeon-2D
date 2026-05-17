@@ -301,7 +301,27 @@ namespace Dungeon2D
         public void PlayDashFeedback(Vector2 position, Vector2 direction)
         {
             audioSystem.PlayDash();
-            SpawnAfterImage(position, direction);
+            SpawnDashRuneMotes(position, direction);
+        }
+
+        public void SpawnPlayerDashTrail(Vector2 position, Vector2 direction, Sprite sprite, Vector3 scale, bool flipX)
+        {
+            if (worldRoot == null || Art == null)
+            {
+                return;
+            }
+
+            Sprite trailSprite = sprite != null ? sprite : Art.GetCharacterSprite(CharacterSpriteId.Hero);
+            Vector2 safeDirection = direction.sqrMagnitude > 0.001f ? direction.normalized : Vector2.up;
+            GameObject afterImage = CreateSpriteObject("DashTrailAfterImage", trailSprite, worldRoot, position - safeDirection * 0.08f, 17);
+            afterImage.transform.localScale = scale;
+
+            SpriteRenderer renderer = afterImage.GetComponent<SpriteRenderer>();
+            renderer.flipX = flipX;
+            renderer.color = new Color(0.34f, 0.86f, 1f, 0.46f);
+
+            Dungeon2DDashTrailEffect trail = afterImage.AddComponent<Dungeon2DDashTrailEffect>();
+            trail.Configure(safeDirection, renderer.color, 0.22f, 1.08f, 0.32f);
         }
 
         public void PlayHitFeedback()
@@ -950,18 +970,30 @@ namespace Dungeon2D
             }
         }
 
-        private void SpawnAfterImage(Vector2 position, Vector2 direction)
+        private void SpawnDashRuneMotes(Vector2 position, Vector2 direction)
         {
-            if (Player == null)
+            if (worldRoot == null || Art == null)
             {
                 return;
             }
 
-            GameObject afterImage = CreateSpriteObject("DashAfterImage", Art.GetCharacterSprite(CharacterSpriteId.Hero), worldRoot, position - direction * 0.45f, 17);
-            afterImage.transform.localScale = Player.transform.localScale;
-            SpriteRenderer renderer = afterImage.GetComponent<SpriteRenderer>();
-            renderer.color = new Color(0.38f, 0.9f, 1f, 0.42f);
-            Destroy(afterImage, 0.18f);
+            Vector2 safeDirection = direction.sqrMagnitude > 0.001f ? direction.normalized : Vector2.up;
+            Vector2 side = new Vector2(-safeDirection.y, safeDirection.x);
+
+            for (int i = 0; i < 3; i++)
+            {
+                float sideOffset = i == 1 ? 0f : (i == 0 ? -0.24f : 0.24f);
+                Vector2 motePosition = position - safeDirection * (0.28f + i * 0.18f) + side * sideOffset;
+                GameObject mote = CreateSpriteObject("DashRuneMote", Art.GetEnvironmentSprite(EnvironmentSpriteId.HazardRune), worldRoot, motePosition, 16);
+                mote.transform.localScale = Vector3.one * (0.18f + i * 0.035f);
+                mote.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(safeDirection.y, safeDirection.x) * Mathf.Rad2Deg + i * 24f);
+
+                SpriteRenderer renderer = mote.GetComponent<SpriteRenderer>();
+                renderer.color = new Color(0.56f, 0.94f, 1f, 0.34f);
+
+                Dungeon2DDashTrailEffect trail = mote.AddComponent<Dungeon2DDashTrailEffect>();
+                trail.Configure(safeDirection, renderer.color, 0.18f + i * 0.025f, 1f, 0.18f);
+            }
         }
 
         private void SpawnOrResetPlayer()

@@ -412,6 +412,88 @@ namespace Dungeon2D
         }
     }
 
+    public sealed class Dungeon2DDashTrailEffect : MonoBehaviour
+    {
+        [SerializeField] private SpriteRenderer spriteRenderer;
+        [SerializeField] private float duration = 0.22f;
+        [SerializeField] private float driftDistance = 0.24f;
+
+        private Vector3 startPosition;
+        private Vector3 startScale;
+        private Quaternion startRotation;
+        private Vector2 driftDirection;
+        private Color startColor = new Color(0.38f, 0.9f, 1f, 0.42f);
+        private float timer;
+        private float rotationWobble;
+
+        private void Awake()
+        {
+            if (spriteRenderer == null)
+            {
+                spriteRenderer = GetComponent<SpriteRenderer>();
+            }
+
+            CaptureStartState();
+        }
+
+        public void Configure(Vector2 dashDirection, Color color, float lifeTime, float scaleMultiplier, float drift)
+        {
+            if (spriteRenderer == null)
+            {
+                spriteRenderer = GetComponent<SpriteRenderer>();
+            }
+
+            duration = Mathf.Max(0.05f, lifeTime);
+            driftDistance = Mathf.Max(0f, drift);
+            driftDirection = dashDirection.sqrMagnitude > 0.001f ? -dashDirection.normalized : Vector2.zero;
+            timer = 0f;
+            CaptureStartState();
+            startColor = color;
+            startScale *= Mathf.Max(0.1f, scaleMultiplier);
+            transform.localScale = startScale;
+            rotationWobble = Random.Range(-5f, 5f);
+
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.color = startColor;
+            }
+        }
+
+        private void CaptureStartState()
+        {
+            startPosition = transform.position;
+            startScale = transform.localScale;
+            startRotation = transform.rotation;
+            if (spriteRenderer != null)
+            {
+                startColor = spriteRenderer.color;
+            }
+        }
+
+        private void Update()
+        {
+            timer += Time.deltaTime;
+            float t = Mathf.Clamp01(timer / Mathf.Max(0.01f, duration));
+            float eased = 1f - Mathf.Pow(1f - t, 2f);
+
+            transform.position = startPosition + (Vector3)(driftDirection * driftDistance * eased);
+            transform.localScale = Vector3.Lerp(startScale, startScale * 0.78f, t);
+            transform.rotation = startRotation * Quaternion.Euler(0f, 0f, Mathf.Sin(t * Mathf.PI) * rotationWobble);
+
+            if (spriteRenderer != null)
+            {
+                Color color = startColor;
+                color.a = Mathf.Lerp(startColor.a, 0f, t);
+                spriteRenderer.color = color;
+            }
+
+            if (timer >= duration)
+            {
+                Destroy(gameObject);
+            }
+        }
+    }
+
     public sealed class Dungeon2DWorldHealthBar : MonoBehaviour
     {
         private static Sprite barSprite;
