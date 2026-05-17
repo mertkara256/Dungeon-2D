@@ -301,6 +301,7 @@ namespace Dungeon2D
         public void PlayDashFeedback(Vector2 position, Vector2 direction)
         {
             audioSystem.PlayDash();
+            SpawnDashEnergyStreak(position, direction);
             SpawnDashRuneMotes(position, direction);
         }
 
@@ -313,15 +314,15 @@ namespace Dungeon2D
 
             Sprite trailSprite = sprite != null ? sprite : Art.GetCharacterSprite(CharacterSpriteId.Hero);
             Vector2 safeDirection = direction.sqrMagnitude > 0.001f ? direction.normalized : Vector2.up;
-            GameObject afterImage = CreateSpriteObject("DashTrailAfterImage", trailSprite, worldRoot, position - safeDirection * 0.08f, 17);
+            GameObject afterImage = CreateSpriteObject("DashTrailAfterImage", trailSprite, worldRoot, position - safeDirection * 0.08f, 19);
             afterImage.transform.localScale = scale;
 
             SpriteRenderer renderer = afterImage.GetComponent<SpriteRenderer>();
             renderer.flipX = flipX;
-            renderer.color = new Color(0.34f, 0.86f, 1f, 0.46f);
+            renderer.color = new Color(0.44f, 0.96f, 1f, 0.72f);
 
             Dungeon2DDashTrailEffect trail = afterImage.AddComponent<Dungeon2DDashTrailEffect>();
-            trail.Configure(safeDirection, renderer.color, 0.22f, 1.08f, 0.32f);
+            trail.Configure(safeDirection, renderer.color, 0.34f, 1.2f, 0.46f);
         }
 
         public void PlayHitFeedback()
@@ -980,20 +981,48 @@ namespace Dungeon2D
             Vector2 safeDirection = direction.sqrMagnitude > 0.001f ? direction.normalized : Vector2.up;
             Vector2 side = new Vector2(-safeDirection.y, safeDirection.x);
 
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 5; i++)
             {
-                float sideOffset = i == 1 ? 0f : (i == 0 ? -0.24f : 0.24f);
-                Vector2 motePosition = position - safeDirection * (0.28f + i * 0.18f) + side * sideOffset;
-                GameObject mote = CreateSpriteObject("DashRuneMote", Art.GetEnvironmentSprite(EnvironmentSpriteId.HazardRune), worldRoot, motePosition, 16);
-                mote.transform.localScale = Vector3.one * (0.18f + i * 0.035f);
+                float sideOffset = (i - 2) * 0.17f;
+                Vector2 motePosition = position - safeDirection * (0.26f + i * 0.17f) + side * sideOffset;
+                GameObject mote = CreateSpriteObject("DashRuneMote", Art.GetEnvironmentSprite(EnvironmentSpriteId.HazardRune), worldRoot, motePosition, 18);
+                mote.transform.localScale = Vector3.one * (0.22f + i * 0.035f);
                 mote.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(safeDirection.y, safeDirection.x) * Mathf.Rad2Deg + i * 24f);
 
                 SpriteRenderer renderer = mote.GetComponent<SpriteRenderer>();
-                renderer.color = new Color(0.56f, 0.94f, 1f, 0.34f);
+                renderer.color = new Color(0.58f, 0.98f, 1f, 0.62f);
 
                 Dungeon2DDashTrailEffect trail = mote.AddComponent<Dungeon2DDashTrailEffect>();
-                trail.Configure(safeDirection, renderer.color, 0.18f + i * 0.025f, 1f, 0.18f);
+                trail.Configure(safeDirection, renderer.color, 0.24f + i * 0.025f, 1.06f, 0.26f);
             }
+        }
+
+        private void SpawnDashEnergyStreak(Vector2 position, Vector2 direction)
+        {
+            if (worldRoot == null || Art == null)
+            {
+                return;
+            }
+
+            Vector2 safeDirection = direction.sqrMagnitude > 0.001f ? direction.normalized : Vector2.up;
+            float angle = Mathf.Atan2(safeDirection.y, safeDirection.x) * Mathf.Rad2Deg - 90f;
+            Vector2 center = position - safeDirection * 0.55f;
+
+            GameObject glow = CreateSpriteObject("DashEnergyGlow", Art.GetProjectileSprite(), worldRoot, center, 18);
+            glow.transform.localScale = new Vector3(1.05f, 3.1f, 1f);
+            glow.transform.rotation = Quaternion.Euler(0f, 0f, angle);
+            SpriteRenderer glowRenderer = glow.GetComponent<SpriteRenderer>();
+            glowRenderer.color = new Color(0.28f, 0.84f, 1f, 0.42f);
+            glow.AddComponent<Dungeon2DDashTrailEffect>()
+                .Configure(safeDirection, glowRenderer.color, 0.2f, 1f, 0.2f);
+
+            GameObject core = CreateSpriteObject("DashEnergyCore", Art.GetProjectileSprite(), worldRoot, center + safeDirection * 0.1f, 19);
+            core.transform.localScale = new Vector3(0.46f, 2.45f, 1f);
+            core.transform.rotation = Quaternion.Euler(0f, 0f, angle);
+            SpriteRenderer coreRenderer = core.GetComponent<SpriteRenderer>();
+            coreRenderer.color = new Color(0.82f, 1f, 1f, 0.78f);
+            core.AddComponent<Dungeon2DDashTrailEffect>()
+                .Configure(safeDirection, coreRenderer.color, 0.16f, 1f, 0.12f);
         }
 
         private void SpawnOrResetPlayer()

@@ -30,7 +30,7 @@ namespace Dungeon2D
         private const float DashDistance = 4.5f;
         private const float DashDuration = 0.12f;
         private const float DashCooldown = 0.45f;
-        private const float DashTrailInterval = 0.024f;
+        private const float DashTrailInterval = 0.016f;
         private const float MeleeCooldown = 0.45f;
         private const float InvulnerabilityDuration = 0.25f;
 
