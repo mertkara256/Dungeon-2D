@@ -114,7 +114,7 @@ namespace Dungeon2D
 
             if (scoreText != null)
             {
-                scoreText.text = "SCORE " + score;
+                scoreText.text = "SCORE: " + score;
             }
 
             if (roomText != null)
@@ -392,6 +392,8 @@ namespace Dungeon2D
             hudRoot.SetActive(false);
 
             BuildVitalsPanel();
+            BuildScorePanel();
+            BuildInventoryPanel();
             BuildRoomPanel();
             BuildBossPanel();
             BuildNotification();
@@ -402,70 +404,133 @@ namespace Dungeon2D
 
         private void BuildVitalsPanel()
         {
-            Image panel = CreatePanel("VitalsPanel", hudRoot.transform);
-            SetFixed(panel.rectTransform, new Vector2(0.14f, 0.88f), new Vector2(360f, 176f), Vector2.zero);
+            Image panel = CreateHudPanel("VitalsPanel", hudRoot.transform);
+            SetFixed(panel.rectTransform, new Vector2(0f, 1f), new Vector2(348f, 88f), new Vector2(196f, -58f));
 
-            Text label = CreateText("VitalsLabel", panel.transform, "PLAYER STATUS", 13, new Color(0.62f, 0.66f, 0.72f, 1f), TextAnchor.MiddleLeft);
-            Stretch(label.rectTransform, new Vector2(0.06f, 0.78f), new Vector2(0.54f, 0.95f), Vector2.zero, Vector2.zero);
-
-            scoreText = CreateText("Score", panel.transform, "SCORE 0", 18, Color.white, TextAnchor.MiddleRight);
-            Stretch(scoreText.rectTransform, new Vector2(0.45f, 0.78f), new Vector2(0.94f, 0.95f), Vector2.zero, Vector2.zero);
+            Text label = CreateText("VitalsLabel", panel.transform, "PLAYER STATUS", 11, new Color(0.78f, 0.82f, 0.86f, 1f), TextAnchor.MiddleLeft);
+            label.fontStyle = FontStyle.Bold;
+            AddTextShadow(label, new Color(0f, 0f, 0f, 0.72f), new Vector2(1f, -1f));
+            Stretch(label.rectTransform, new Vector2(0.065f, 0.58f), new Vector2(0.935f, 0.88f), Vector2.zero, Vector2.zero);
 
             Image healthTrack = CreateImage("HealthTrack", panel.transform, new Color(0f, 0f, 0f, 0.42f));
+            healthTrack.raycastTarget = false;
             ApplySprite(healthTrack, theme != null ? theme.BarTrack : null, Image.Type.Sliced);
-            Stretch(healthTrack.rectTransform, new Vector2(0.06f, 0.54f), new Vector2(0.94f, 0.72f), Vector2.zero, Vector2.zero);
+            AddHudShadow(healthTrack.gameObject, new Vector2(2f, -2f), 0.24f);
+            Stretch(healthTrack.rectTransform, new Vector2(0.065f, 0.16f), new Vector2(0.935f, 0.52f), Vector2.zero, Vector2.zero);
+
             healthFill = CreateImage("HealthFill", healthTrack.transform, new Color(0.82f, 0.12f, 0.16f, 1f));
+            healthFill.raycastTarget = false;
             ApplySprite(healthFill, theme != null ? theme.HealthFill : null, Image.Type.Sliced);
             healthFillRect = healthFill.rectTransform;
             Stretch(healthFillRect, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-            healthText = CreateText("HealthText", healthTrack.transform, "100 / 100", 16, Color.white, TextAnchor.MiddleCenter);
-            Stretch(healthText.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
-            potionText = CreateItemBadge(panel.transform, "P", art.GetEnvironmentSprite(EnvironmentSpriteId.HealthPotion), new Vector2(0.18f, 0.25f));
-            boostText = CreateItemBadge(panel.transform, "B", art.GetEnvironmentSprite(EnvironmentSpriteId.SpeedPotion), new Vector2(0.5f, 0.25f));
-            keyText = CreateItemBadge(panel.transform, "K", art.GetEnvironmentSprite(EnvironmentSpriteId.Key), new Vector2(0.82f, 0.25f));
+            Image healthTopLight = CreateImage("HealthTopLight", healthFill.transform, new Color(1f, 0.34f, 0.28f, 0.18f));
+            healthTopLight.raycastTarget = false;
+            Stretch(healthTopLight.rectTransform, new Vector2(0.03f, 0.56f), new Vector2(0.97f, 0.92f), Vector2.zero, Vector2.zero);
+
+            Image healthBottomShade = CreateImage("HealthBottomShade", healthFill.transform, new Color(0.12f, 0f, 0f, 0.22f));
+            healthBottomShade.raycastTarget = false;
+            Stretch(healthBottomShade.rectTransform, new Vector2(0.02f, 0.02f), new Vector2(0.98f, 0.34f), Vector2.zero, Vector2.zero);
+
+            Image healthInnerShade = CreateImage("HealthInnerShade", healthTrack.transform, new Color(0f, 0f, 0f, 0.14f));
+            healthInnerShade.raycastTarget = false;
+            Stretch(healthInnerShade.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0.18f), Vector2.zero, Vector2.zero);
+
+            healthText = CreateText("HealthText", healthTrack.transform, "100 / 100", 15, new Color(0.96f, 0.97f, 0.95f, 1f), TextAnchor.MiddleCenter);
+            healthText.fontStyle = FontStyle.Bold;
+            AddTextOutline(healthText, new Color(0f, 0f, 0f, 0.78f));
+            Stretch(healthText.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
         }
 
-        private Text CreateItemBadge(Transform parent, string label, Sprite icon, Vector2 anchor)
+        private void BuildScorePanel()
         {
-            Image badge = CreateImage("Item_" + label, parent, new Color(1f, 1f, 1f, 0.07f));
-            ApplySprite(badge, theme != null ? theme.ItemBadge : null, Image.Type.Sliced);
-            SetFixed(badge.rectTransform, anchor, new Vector2(84f, 64f), Vector2.zero);
+            Image panel = CreateHudPanel("ScorePanel", hudRoot.transform);
+            ApplySprite(panel, theme != null ? theme.Notification : null, Image.Type.Sliced);
+            SetFixed(panel.rectTransform, new Vector2(1f, 1f), new Vector2(188f, 46f), new Vector2(-116f, -38f));
+
+            scoreText = CreateText("Score", panel.transform, "SCORE: 0", 15, new Color(0.94f, 0.95f, 0.92f, 1f), TextAnchor.MiddleCenter);
+            scoreText.fontStyle = FontStyle.Bold;
+            AddTextOutline(scoreText, new Color(0f, 0f, 0f, 0.66f));
+            Stretch(scoreText.rectTransform, new Vector2(0.08f, 0f), new Vector2(0.92f, 1f), Vector2.zero, Vector2.zero);
+        }
+
+        private void BuildInventoryPanel()
+        {
+            Image panel = CreateHudPanel("InventoryPanel", hudRoot.transform);
+            ApplySprite(panel, theme != null ? theme.Notification : null, Image.Type.Sliced);
+            SetFixed(panel.rectTransform, new Vector2(0.5f, 0f), new Vector2(342f, 58f), new Vector2(0f, 100f));
+
+            HorizontalLayoutGroup layout = panel.gameObject.AddComponent<HorizontalLayoutGroup>();
+            layout.padding = new RectOffset(18, 18, 8, 8);
+            layout.spacing = 14f;
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.childControlHeight = false;
+            layout.childControlWidth = false;
+            layout.childForceExpandHeight = false;
+            layout.childForceExpandWidth = false;
+
+            potionText = CreateItemBadge(panel.transform, "RedOrb", art.GetEnvironmentSprite(EnvironmentSpriteId.HealthPotion));
+            boostText = CreateItemBadge(panel.transform, "BlueOrb", art.GetEnvironmentSprite(EnvironmentSpriteId.SpeedPotion));
+            keyText = CreateItemBadge(panel.transform, "Key", art.GetEnvironmentSprite(EnvironmentSpriteId.Key));
+        }
+
+        private Text CreateItemBadge(Transform parent, string label, Sprite icon)
+        {
+            Image badge = CreateImage("Item_" + label, parent, new Color(1f, 1f, 1f, 0.035f));
+            badge.raycastTarget = false;
+            SetFixed(badge.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(88f, 42f), Vector2.zero);
+
+            LayoutElement element = badge.gameObject.AddComponent<LayoutElement>();
+            element.minWidth = 88f;
+            element.minHeight = 42f;
+            element.preferredWidth = 88f;
+            element.preferredHeight = 42f;
 
             Image iconImage = CreateImage("Icon", badge.transform, Color.white);
+            iconImage.raycastTarget = false;
             iconImage.sprite = icon;
-            Stretch(iconImage.rectTransform, new Vector2(0.1f, 0.18f), new Vector2(0.54f, 0.82f), Vector2.zero, Vector2.zero);
+            iconImage.enabled = icon != null;
+            iconImage.preserveAspect = true;
+            SetFixed(iconImage.rectTransform, new Vector2(0.32f, 0.5f), new Vector2(30f, 30f), Vector2.zero);
 
-            Text count = CreateText("Count", badge.transform, "0", 20, Color.white, TextAnchor.MiddleRight);
-            Stretch(count.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.9f, 1f), Vector2.zero, Vector2.zero);
+            Text count = CreateText("Count", badge.transform, "0", 18, new Color(0.94f, 0.95f, 0.92f, 1f), TextAnchor.MiddleLeft);
+            count.fontStyle = FontStyle.Bold;
+            AddTextOutline(count, new Color(0f, 0f, 0f, 0.72f));
+            Stretch(count.rectTransform, new Vector2(0.58f, 0f), new Vector2(0.96f, 1f), Vector2.zero, Vector2.zero);
             return count;
         }
 
         private void BuildRoomPanel()
         {
-            Image panel = CreatePanel("RoomPanel", hudRoot.transform);
+            Image panel = CreateHudPanel("RoomPanel", hudRoot.transform);
             SetFixed(panel.rectTransform, new Vector2(0.5f, 0.92f), new Vector2(360f, 66f), Vector2.zero);
 
             Text label = CreateText("RouteLabel", panel.transform, "DUNGEON ROUTE", 12, new Color(0.62f, 0.66f, 0.72f, 1f), TextAnchor.MiddleCenter);
+            AddTextShadow(label, new Color(0f, 0f, 0f, 0.62f), new Vector2(1f, -1f));
             Stretch(label.rectTransform, new Vector2(0f, 0.58f), Vector2.one, Vector2.zero, Vector2.zero);
 
             roomText = CreateText("RoomText", panel.transform, "ROOM --", 21, Color.white, TextAnchor.MiddleCenter);
+            AddTextOutline(roomText, new Color(0f, 0f, 0f, 0.62f));
             Stretch(roomText.rectTransform, Vector2.zero, new Vector2(1f, 0.62f), Vector2.zero, Vector2.zero);
         }
 
         private void BuildBossPanel()
         {
-            Image panel = CreatePanel("BossPanel", hudRoot.transform);
+            Image panel = CreateHudPanel("BossPanel", hudRoot.transform);
             bossPanelRoot = panel.gameObject;
             SetFixed(panel.rectTransform, new Vector2(0.5f, 0.82f), new Vector2(520f, 52f), Vector2.zero);
 
             bossText = CreateText("BossName", panel.transform, "CORRUPTED GUARDIAN", 15, Color.white, TextAnchor.MiddleCenter);
+            AddTextOutline(bossText, new Color(0f, 0f, 0f, 0.64f));
             Stretch(bossText.rectTransform, new Vector2(0.04f, 0.48f), new Vector2(0.96f, 0.94f), Vector2.zero, Vector2.zero);
 
             Image track = CreateImage("BossTrack", panel.transform, new Color(0f, 0f, 0f, 0.44f));
+            track.raycastTarget = false;
             ApplySprite(track, theme != null ? theme.BarTrack : null, Image.Type.Sliced);
+            AddHudShadow(track.gameObject, new Vector2(2f, -2f), 0.2f);
             Stretch(track.rectTransform, new Vector2(0.04f, 0.12f), new Vector2(0.96f, 0.42f), Vector2.zero, Vector2.zero);
             bossFill = CreateImage("BossFill", track.transform, new Color(0.75f, 0.12f, 0.85f, 1f));
+            bossFill.raycastTarget = false;
             ApplySprite(bossFill, theme != null ? theme.BossFill : null, Image.Type.Sliced);
             bossFillRect = bossFill.rectTransform;
             Stretch(bossFillRect, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
@@ -474,7 +539,7 @@ namespace Dungeon2D
 
         private void BuildNotification()
         {
-            Image panel = CreatePanel("Notification", hudRoot.transform);
+            Image panel = CreateHudPanel("Notification", hudRoot.transform);
             SetFixed(panel.rectTransform, new Vector2(0.5f, 0.78f), new Vector2(560f, 46f), Vector2.zero);
             ApplySprite(panel, theme != null ? theme.Notification : null, Image.Type.Sliced);
             notificationGroup = panel.gameObject.AddComponent<CanvasGroup>();
@@ -482,41 +547,45 @@ namespace Dungeon2D
             notificationGroup.blocksRaycasts = false;
 
             notificationText = CreateText("NotificationText", panel.transform, "", 18, Color.white, TextAnchor.MiddleCenter);
+            AddTextOutline(notificationText, new Color(0f, 0f, 0f, 0.62f));
             Stretch(notificationText.rectTransform, new Vector2(0.04f, 0f), new Vector2(0.96f, 1f), Vector2.zero, Vector2.zero);
         }
 
         private void BuildInteractionPrompt()
         {
-            Image panel = CreatePanel("InteractionPrompt", hudRoot.transform);
-            SetFixed(panel.rectTransform, new Vector2(0.5f, 0.18f), new Vector2(360f, 48f), Vector2.zero);
+            Image panel = CreateHudPanel("InteractionPrompt", hudRoot.transform);
+            SetFixed(panel.rectTransform, new Vector2(0.5f, 0.22f), new Vector2(360f, 48f), Vector2.zero);
             ApplySprite(panel, theme != null ? theme.Notification : null, Image.Type.Sliced);
             interactionGroup = panel.gameObject.AddComponent<CanvasGroup>();
             interactionGroup.alpha = 0f;
             interactionGroup.blocksRaycasts = false;
 
             interactionText = CreateText("InteractionText", panel.transform, "", 18, new Color(1f, 0.82f, 0.28f, 1f), TextAnchor.MiddleCenter);
+            AddTextOutline(interactionText, new Color(0f, 0f, 0f, 0.66f));
             Stretch(interactionText.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
         }
 
         private void BuildStateChip()
         {
-            Image panel = CreatePanel("StateChip", hudRoot.transform);
-            SetFixed(panel.rectTransform, new Vector2(0.88f, 0.92f), new Vector2(200f, 44f), Vector2.zero);
+            Image panel = CreateHudPanel("StateChip", hudRoot.transform);
+            SetFixed(panel.rectTransform, new Vector2(0.88f, 0.84f), new Vector2(200f, 44f), Vector2.zero);
             stateGroup = panel.gameObject.AddComponent<CanvasGroup>();
             stateGroup.alpha = 0f;
             stateGroup.blocksRaycasts = false;
 
             stateText = CreateText("StateText", panel.transform, "", 19, Color.white, TextAnchor.MiddleCenter);
+            AddTextOutline(stateText, new Color(0f, 0f, 0f, 0.64f));
             Stretch(stateText.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
         }
 
         private void BuildControlsBar()
         {
-            Image bar = CreatePanel("ControlsBar", hudRoot.transform);
+            Image bar = CreateHudPanel("ControlsBar", hudRoot.transform);
             SetFixed(bar.rectTransform, new Vector2(0.5f, 0.045f), new Vector2(880f, 40f), Vector2.zero);
             ApplySprite(bar, theme != null ? theme.Notification : null, Image.Type.Sliced);
 
             Text text = CreateText("ControlsText", bar.transform, "WASD Move   Mouse Aim   LMB Shoot   RMB Melee   Shift Dash   Q Potion   1 Boost   E Interact   Esc Pause", 15, new Color(0.9f, 0.9f, 0.86f, 1f), TextAnchor.MiddleCenter);
+            AddTextShadow(text, new Color(0f, 0f, 0f, 0.56f), new Vector2(1f, -1f));
             Stretch(text.rectTransform, new Vector2(0.02f, 0f), new Vector2(0.98f, 1f), Vector2.zero, Vector2.zero);
         }
 
@@ -630,6 +699,14 @@ namespace Dungeon2D
             return image;
         }
 
+        private Image CreateHudPanel(string name, Transform parent)
+        {
+            Image image = CreatePanel(name, parent);
+            image.raycastTarget = false;
+            AddHudShadow(image.gameObject);
+            return image;
+        }
+
         private Button CreateButton(Transform parent, string label, Color accent)
         {
             Image image = CreateImage("Button_" + label, parent, new Color(0.095f, 0.102f, 0.13f, 0.96f));
@@ -700,6 +777,50 @@ namespace Dungeon2D
             text.horizontalOverflow = HorizontalWrapMode.Overflow;
             text.verticalOverflow = VerticalWrapMode.Truncate;
             return text;
+        }
+
+        private static void AddHudShadow(GameObject target)
+        {
+            AddHudShadow(target, new Vector2(3f, -3f), 0.28f);
+        }
+
+        private static void AddHudShadow(GameObject target, Vector2 distance, float alpha)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            Shadow shadow = target.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, alpha);
+            shadow.effectDistance = distance;
+            shadow.useGraphicAlpha = true;
+        }
+
+        private static void AddTextShadow(Text text, Color color, Vector2 distance)
+        {
+            if (text == null)
+            {
+                return;
+            }
+
+            Shadow shadow = text.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = color;
+            shadow.effectDistance = distance;
+            shadow.useGraphicAlpha = true;
+        }
+
+        private static void AddTextOutline(Text text, Color color)
+        {
+            if (text == null)
+            {
+                return;
+            }
+
+            Outline outline = text.gameObject.AddComponent<Outline>();
+            outline.effectColor = color;
+            outline.effectDistance = new Vector2(1f, -1f);
+            outline.useGraphicAlpha = true;
         }
 
         private RectTransform CreateRect(string name, Transform parent)
