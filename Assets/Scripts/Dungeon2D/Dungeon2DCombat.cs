@@ -4,6 +4,8 @@ namespace Dungeon2D
 {
     public sealed class DungeonProjectile2D : MonoBehaviour
     {
+        private static Material trailMaterial;
+
         private Dungeon2DGame game;
         private Vector2 direction;
         private float speed;
@@ -45,6 +47,7 @@ namespace Dungeon2D
             renderer.sprite = sprite;
             renderer.color = color;
             renderer.sortingOrder = 25;
+            ConfigureTrail(scale, color, playerOwned);
 
             CircleCollider2D collider = gameObject.GetComponent<CircleCollider2D>();
             if (collider == null)
@@ -63,6 +66,79 @@ namespace Dungeon2D
 
             body.gravityScale = 0f;
             body.bodyType = RigidbodyType2D.Kinematic;
+        }
+
+        private void ConfigureTrail(float scale, Color projectileColor, bool isPlayerOwned)
+        {
+            TrailRenderer trail = gameObject.GetComponent<TrailRenderer>();
+            if (trail == null)
+            {
+                trail = gameObject.AddComponent<TrailRenderer>();
+            }
+
+            trail.material = GetTrailMaterial();
+            trail.time = isPlayerOwned ? 0.18f : 0.24f;
+            trail.minVertexDistance = 0.035f;
+            trail.numCapVertices = 0;
+            trail.numCornerVertices = 0;
+            trail.alignment = LineAlignment.View;
+            trail.textureMode = LineTextureMode.Stretch;
+            trail.emitting = true;
+            trail.sortingOrder = 24;
+            trail.startWidth = Mathf.Lerp(0.13f, 0.24f, Mathf.Clamp01(scale));
+            trail.endWidth = 0f;
+            trail.colorGradient = CreateTrailGradient(projectileColor, isPlayerOwned);
+            trail.Clear();
+        }
+
+        private static Material GetTrailMaterial()
+        {
+            if (trailMaterial != null)
+            {
+                return trailMaterial;
+            }
+
+            Shader shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+            if (shader == null)
+            {
+                shader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
+            }
+
+            if (shader == null)
+            {
+                shader = Shader.Find("Sprites/Default");
+            }
+
+            if (shader == null)
+            {
+                shader = Shader.Find("Universal Render Pipeline/Unlit");
+            }
+
+            trailMaterial = shader != null ? new Material(shader) : null;
+            return trailMaterial;
+        }
+
+        private static Gradient CreateTrailGradient(Color projectileColor, bool isPlayerOwned)
+        {
+            Color core = Color.Lerp(projectileColor, Color.white, isPlayerOwned ? 0.32f : 0.18f);
+            Color ember = Color.Lerp(projectileColor, new Color(0.08f, 0.05f, 0.12f, 1f), 0.28f);
+            float startAlpha = isPlayerOwned ? 0.74f : 0.68f;
+
+            Gradient gradient = new Gradient();
+            gradient.SetKeys(
+                new[]
+                {
+                    new GradientColorKey(core, 0f),
+                    new GradientColorKey(projectileColor, 0.34f),
+                    new GradientColorKey(ember, 1f)
+                },
+                new[]
+                {
+                    new GradientAlphaKey(startAlpha, 0f),
+                    new GradientAlphaKey(0.42f, 0.45f),
+                    new GradientAlphaKey(0f, 1f)
+                });
+            return gradient;
         }
 
         private void Update()
