@@ -22,6 +22,7 @@ namespace Dungeon2D
         private Sprite[] walkFrames;
         private Sprite[] primaryAttackFrames;
         private Sprite[] secondaryAttackFrames;
+        private readonly Sprite[] fallbackLoopFrame = new Sprite[1];
         private Coroutine flashRoutine;
         private Coroutine attackRoutine;
         private Coroutine deathRoutine;
@@ -307,7 +308,13 @@ namespace Dungeon2D
                 return walkFrames;
             }
 
-            return idleFrames != null && idleFrames.Length > 0 ? idleFrames : new[] { targetRenderer != null ? targetRenderer.sprite : null };
+            if (idleFrames != null && idleFrames.Length > 0)
+            {
+                return idleFrames;
+            }
+
+            fallbackLoopFrame[0] = targetRenderer != null ? targetRenderer.sprite : null;
+            return fallbackLoopFrame;
         }
 
         private void ApplyFrame(Sprite[] frames, int index)

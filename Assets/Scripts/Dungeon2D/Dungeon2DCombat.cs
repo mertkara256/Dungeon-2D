@@ -76,7 +76,12 @@ namespace Dungeon2D
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (other == null || other.gameObject == owner || other.isTrigger && other.GetComponent<DungeonHazard2D>() == null)
+            if (other == null || other.gameObject == owner)
+            {
+                return;
+            }
+
+            if (other.isTrigger && other.GetComponent<DungeonHazard2D>() == null)
             {
                 return;
             }
@@ -419,7 +424,7 @@ namespace Dungeon2D
 
             if (!immediate)
             {
-                transform.localScale = open ? new Vector3(1f, 0.72f, 1f) : Vector3.one;
+                transform.localScale = open ? new Vector3(1f, Dungeon2DConfig.DoorOpenVisualHeight, 1f) : Vector3.one;
             }
         }
     }

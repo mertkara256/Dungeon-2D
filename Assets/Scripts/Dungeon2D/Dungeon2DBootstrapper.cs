@@ -25,7 +25,7 @@ namespace Dungeon2D
                 return;
             }
 
-            GameObject host = new GameObject("Dungeon2D Runtime");
+            GameObject host = new GameObject(Dungeon2DConfig.RuntimeRootName);
             host.AddComponent<Dungeon2DGame>();
         }
     }

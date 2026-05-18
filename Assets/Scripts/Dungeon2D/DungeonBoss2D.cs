@@ -23,9 +23,11 @@ namespace Dungeon2D
         private CircleCollider2D bodyCollider;
         private Rigidbody2D body;
         private Transform player;
-        private float maxHealth = 480f;
+        private const float BaseMaxHealth = 480f;
+        private const float BaseMoveSpeed = 3.4f;
+        private float maxHealth = BaseMaxHealth;
         private float currentHealth;
-        private float moveSpeed = 3.4f;
+        private float moveSpeed = BaseMoveSpeed;
         private bool busy;
         private bool vulnerable;
         private bool alternateTripleVolley;
@@ -46,14 +48,22 @@ namespace Dungeon2D
 
         public float HealthRatio
         {
-            get { return maxHealth <= 0.01f ? 0f : currentHealth / maxHealth; }
+            get { return maxHealth <= 0.01f ? 0f : Mathf.Clamp01(currentHealth / maxHealth); }
         }
 
         public void Configure(Dungeon2DGame owner, DungeonRoom2D sourceRoom, int difficultyLevel)
         {
+            if (owner == null || sourceRoom == null)
+            {
+                enabled = false;
+                return;
+            }
+
             game = owner;
             room = sourceRoom;
-            player = owner.Player.transform;
+            player = owner.Player != null ? owner.Player.transform : null;
+            maxHealth = BaseMaxHealth;
+            moveSpeed = BaseMoveSpeed;
 
             spriteRenderer = GetComponent<SpriteRenderer>();
             if (spriteRenderer == null)

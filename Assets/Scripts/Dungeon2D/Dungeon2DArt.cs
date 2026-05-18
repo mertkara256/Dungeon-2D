@@ -58,7 +58,9 @@ namespace Dungeon2D
                 return frames;
             }
 
-            return new[] { GetCharacterSprite(id) };
+            Sprite[] fallbackFrames = { GetCharacterSprite(id) };
+            characterAnimations[key] = fallbackFrames;
+            return fallbackFrames;
         }
 
         public Sprite GetProjectileSprite()

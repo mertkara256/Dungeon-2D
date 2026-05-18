@@ -57,10 +57,16 @@ namespace Dungeon2D
 
         public void Configure(Dungeon2DGame owner, DungeonRoom2D sourceRoom, EnemyKind enemyKind, int difficultyLevel)
         {
+            if (owner == null || sourceRoom == null)
+            {
+                enabled = false;
+                return;
+            }
+
             game = owner;
             room = sourceRoom;
             kind = enemyKind;
-            player = owner.Player.transform;
+            player = owner.Player != null ? owner.Player.transform : null;
 
             spriteRenderer = GetComponent<SpriteRenderer>();
             if (spriteRenderer == null)
@@ -381,10 +387,11 @@ namespace Dungeon2D
                 return;
             }
 
-            float roomMultiplier = 1f + Mathf.Max(0, difficultyLevel) * 0.08f;
+            float safeDifficulty = Mathf.Max(0, difficultyLevel);
+            float roomMultiplier = 1f + safeDifficulty * 0.08f;
             maxHealth *= roomMultiplier;
-            damage *= 1f + Mathf.Max(0, difficultyLevel) * 0.05f;
-            moveSpeed *= 1f + Mathf.Max(0, difficultyLevel) * 0.01f;
+            damage *= 1f + safeDifficulty * 0.05f;
+            moveSpeed *= 1f + safeDifficulty * 0.01f;
             scoreReward = Mathf.RoundToInt(scoreReward * roomMultiplier);
         }
 

@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace Dungeon2D
 {
@@ -252,43 +251,12 @@ namespace Dungeon2D
 
         private void ReadMovementInput()
         {
-            moveInput = Vector2.zero;
-            Keyboard keyboard = Keyboard.current;
-            if (keyboard == null)
-            {
-                return;
-            }
-
-            if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed)
-            {
-                moveInput.x -= 1f;
-            }
-
-            if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed)
-            {
-                moveInput.x += 1f;
-            }
-
-            if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed)
-            {
-                moveInput.y -= 1f;
-            }
-
-            if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed)
-            {
-                moveInput.y += 1f;
-            }
-
-            if (moveInput.sqrMagnitude > 1f)
-            {
-                moveInput.Normalize();
-            }
+            moveInput = Dungeon2DInput.ReadMovement();
         }
 
         private void UpdateAimDirection()
         {
-            Mouse mouse = Mouse.current;
-            if (mouse == null)
+            if (!Dungeon2DInput.TryGetMouseScreenPosition(out Vector2 screenPosition))
             {
                 if (moveInput.sqrMagnitude > 0.001f)
                 {
@@ -298,7 +266,7 @@ namespace Dungeon2D
                 return;
             }
 
-            Vector2 mouseWorld = game.ScreenToWorld(mouse.position.ReadValue());
+            Vector2 mouseWorld = game.ScreenToWorld(screenPosition);
             Vector2 direction = mouseWorld - (Vector2)transform.position;
             if (direction.sqrMagnitude > 0.001f)
             {
@@ -308,13 +276,12 @@ namespace Dungeon2D
 
         private void HandleDashInput()
         {
-            Keyboard keyboard = Keyboard.current;
-            if (keyboard == null || isDashing || Time.time < nextDashAt)
+            if (isDashing || Time.time < nextDashAt)
             {
                 return;
             }
 
-            if (!keyboard.leftShiftKey.wasPressedThisFrame && !keyboard.rightShiftKey.wasPressedThisFrame)
+            if (!Dungeon2DInput.WasDashPressed())
             {
                 return;
             }
@@ -349,18 +316,12 @@ namespace Dungeon2D
 
         private void HandleCombatInput()
         {
-            Mouse mouse = Mouse.current;
-            if (mouse == null)
-            {
-                return;
-            }
-
-            if (mouse.leftButton.isPressed)
+            if (Dungeon2DInput.IsPrimaryFireHeld())
             {
                 TryRangedAttack();
             }
 
-            if (mouse.rightButton.wasPressedThisFrame)
+            if (Dungeon2DInput.WasSecondaryFirePressed())
             {
                 TryMeleeAttack();
             }
@@ -402,13 +363,7 @@ namespace Dungeon2D
 
         private void HandleConsumableInput()
         {
-            Keyboard keyboard = Keyboard.current;
-            if (keyboard == null)
-            {
-                return;
-            }
-
-            if (keyboard.qKey.wasPressedThisFrame)
+            if (Dungeon2DInput.WasPotionPressed())
             {
                 if (game.Inventory.Potions <= 0)
                 {
@@ -425,7 +380,7 @@ namespace Dungeon2D
                 game.RefreshHud();
             }
 
-            if (keyboard.digit1Key.wasPressedThisFrame || keyboard.numpad1Key.wasPressedThisFrame)
+            if (Dungeon2DInput.WasSpeedBoostPressed())
             {
                 if (game.Inventory.SpeedBoosts <= 0)
                 {
