@@ -23,6 +23,8 @@ namespace Dungeon2D
         private Texture2D woodenBridgeTexture;
         private Texture2D bridgeDoorClosedTexture;
         private Texture2D bridgeDoorOpenTexture;
+        private Texture2D wallHorizontalTexture;
+        private Texture2D wallVerticalTexture;
         private Texture2D characterSheet;
         private Texture2D animationSheet;
         private Texture2D projectileTexture;
@@ -115,6 +117,8 @@ namespace Dungeon2D
             woodenBridgeTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_wooden_bridge");
             bridgeDoorClosedTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_bridge_gate_closed");
             bridgeDoorOpenTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_bridge_gate_open");
+            wallHorizontalTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_wall_horizontal");
+            wallVerticalTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_wall_vertical");
             characterSheet = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_character_sheet");
             animationSheet = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_animation_sheet");
             projectileTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_projectile_sprite");
@@ -176,11 +180,15 @@ namespace Dungeon2D
             AddStandaloneEnvironment(EnvironmentSpriteId.WoodenBridge, woodenBridgeTexture, EnvironmentPixelsPerUnit);
             AddStandaloneEnvironment(EnvironmentSpriteId.BridgeDoorClosed, bridgeDoorClosedTexture, EnvironmentPixelsPerUnit);
             AddStandaloneEnvironment(EnvironmentSpriteId.BridgeDoorOpen, bridgeDoorOpenTexture, EnvironmentPixelsPerUnit);
+            AddStandaloneEnvironment(EnvironmentSpriteId.WallHorizontal, wallHorizontalTexture, EnvironmentPixelsPerUnit);
+            AddStandaloneEnvironment(EnvironmentSpriteId.WallVertical, wallVerticalTexture, EnvironmentPixelsPerUnit);
 
             UseEnvironmentFallback(EnvironmentSpriteId.RoomFloor, EnvironmentSpriteId.Floor);
             UseEnvironmentFallback(EnvironmentSpriteId.WoodenBridge, EnvironmentSpriteId.CrackedFloor);
             UseEnvironmentFallback(EnvironmentSpriteId.BridgeDoorClosed, EnvironmentSpriteId.Door);
             UseEnvironmentFallback(EnvironmentSpriteId.BridgeDoorOpen, EnvironmentSpriteId.Archway);
+            UseEnvironmentFallback(EnvironmentSpriteId.WallHorizontal, EnvironmentSpriteId.Wall);
+            UseEnvironmentFallback(EnvironmentSpriteId.WallVertical, EnvironmentSpriteId.Wall);
         }
 
         private void BuildPropSprites()

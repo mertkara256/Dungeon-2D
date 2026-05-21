@@ -122,20 +122,31 @@ namespace Dungeon2D
 
         private void BuildWallVisualLine(Transform parent, Vector2 start, Vector2 end, bool horizontal, float centerGapHalfWidth = 0f)
         {
-            float length = horizontal ? Mathf.Abs(end.x - start.x) : Mathf.Abs(end.y - start.y);
-            int count = Mathf.Max(1, Mathf.CeilToInt(length / Dungeon2DConfig.TileSize));
-            for (int i = 0; i <= count; i++)
+            if (horizontal && centerGapHalfWidth > 0f)
             {
-                float t = count == 0 ? 0f : i / (float)count;
-                Vector2 position = Vector2.Lerp(start, end, t);
-                if (horizontal && centerGapHalfWidth > 0f && Mathf.Abs(position.x) < centerGapHalfWidth)
-                {
-                    continue;
-                }
-
-                GameObject wall = CreateSpriteObject("WallTile", Art.GetEnvironmentSprite(EnvironmentSpriteId.Wall), parent, position, 6);
-                wall.transform.localScale = Vector3.one * Dungeon2DConfig.WallVisualScale;
+                BuildWallVisualSegment(parent, start, new Vector2(-centerGapHalfWidth, start.y), true);
+                BuildWallVisualSegment(parent, new Vector2(centerGapHalfWidth, end.y), end, true);
+                return;
             }
+
+            BuildWallVisualSegment(parent, start, end, horizontal);
+        }
+
+        private void BuildWallVisualSegment(Transform parent, Vector2 start, Vector2 end, bool horizontal)
+        {
+            float length = horizontal ? Mathf.Abs(end.x - start.x) : Mathf.Abs(end.y - start.y);
+            if (length <= 0.05f)
+            {
+                return;
+            }
+
+            Vector2 center = (start + end) * 0.5f;
+            Vector2 size = horizontal
+                ? new Vector2(length, Dungeon2DConfig.WallVisualThickness)
+                : new Vector2(Dungeon2DConfig.WallVisualThickness, length);
+            EnvironmentSpriteId spriteId = horizontal ? EnvironmentSpriteId.WallHorizontal : EnvironmentSpriteId.WallVertical;
+            GameObject wall = CreateSpriteObject(horizontal ? "HorizontalWall" : "VerticalWall", Art.GetEnvironmentSprite(spriteId), parent, center, 6);
+            ScaleSpriteToWorldSize(wall, size);
         }
 
         private void BuildCorridor(int index, float fromY, float toY)

@@ -10,7 +10,7 @@ namespace Dungeon2D.EditorTools
     public static class Dungeon2DScenePreviewBuilder
     {
         public const string PreviewRootName = Dungeon2DConfig.EditModePreviewName;
-        private const string PreviewStyleMarkerName = "PreviewStyle_FloorBridgeV3";
+        private const string PreviewStyleMarkerName = "PreviewStyle_FloorBridgeWallV4";
 
         static Dungeon2DScenePreviewBuilder()
         {
@@ -149,20 +149,31 @@ namespace Dungeon2D.EditorTools
 
         private static void BuildWallVisualLine(Dungeon2DArtLibrary art, Transform parent, Vector2 start, Vector2 end, bool horizontal, float centerGapHalfWidth = 0f)
         {
-            float length = horizontal ? Mathf.Abs(end.x - start.x) : Mathf.Abs(end.y - start.y);
-            int count = Mathf.Max(1, Mathf.CeilToInt(length / Dungeon2DConfig.TileSize));
-            for (int i = 0; i <= count; i++)
+            if (horizontal && centerGapHalfWidth > 0f)
             {
-                float t = count == 0 ? 0f : i / (float)count;
-                Vector2 position = Vector2.Lerp(start, end, t);
-                if (horizontal && centerGapHalfWidth > 0f && Mathf.Abs(position.x) < centerGapHalfWidth)
-                {
-                    continue;
-                }
-
-                GameObject wall = CreateSprite("PreviewWall", art.GetEnvironmentSprite(EnvironmentSpriteId.Wall), parent, position, 6);
-                wall.transform.localScale = Vector3.one * Dungeon2DConfig.WallVisualScale;
+                BuildWallVisualSegment(art, parent, start, new Vector2(-centerGapHalfWidth, start.y), true);
+                BuildWallVisualSegment(art, parent, new Vector2(centerGapHalfWidth, end.y), end, true);
+                return;
             }
+
+            BuildWallVisualSegment(art, parent, start, end, horizontal);
+        }
+
+        private static void BuildWallVisualSegment(Dungeon2DArtLibrary art, Transform parent, Vector2 start, Vector2 end, bool horizontal)
+        {
+            float length = horizontal ? Mathf.Abs(end.x - start.x) : Mathf.Abs(end.y - start.y);
+            if (length <= 0.05f)
+            {
+                return;
+            }
+
+            Vector2 center = (start + end) * 0.5f;
+            Vector2 size = horizontal
+                ? new Vector2(length, Dungeon2DConfig.WallVisualThickness)
+                : new Vector2(Dungeon2DConfig.WallVisualThickness, length);
+            EnvironmentSpriteId spriteId = horizontal ? EnvironmentSpriteId.WallHorizontal : EnvironmentSpriteId.WallVertical;
+            GameObject wall = CreateSprite(horizontal ? "PreviewHorizontalWall" : "PreviewVerticalWall", art.GetEnvironmentSprite(spriteId), parent, center, 6);
+            ScaleSpriteToWorldSize(wall, size);
         }
 
         private static void CreateDoorPreview(Dungeon2DArtLibrary art, Transform parent, Vector2 position)

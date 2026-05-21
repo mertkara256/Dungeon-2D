@@ -22,6 +22,7 @@ namespace Dungeon2D
         public const float RoomWallThickness = 0.84f;
         public const float RoomWallPadding = 0.8f;
         public const float WallVisualScale = 0.92f;
+        public const float WallVisualThickness = 2.05f;
         public const float CharacterVisualScale = 1.3f;
         public const float DoorVerticalOffset = 0.22f;
         public const float DoorColliderHeight = 0.8f;
@@ -42,7 +43,7 @@ namespace Dungeon2D
         public const float PlayerMeleeRadius = 1.9f;
         public const float EnemySpawnInset = 2.5f;
 
-        public const float CameraOrthographicSize = 8f;
+        public const float CameraOrthographicSize = 6.6f;
         public const float CameraDepth = -10f;
         public const float CameraFollowSpeed = 8f;
 

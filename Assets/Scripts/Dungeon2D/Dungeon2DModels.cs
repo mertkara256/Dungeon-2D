@@ -78,7 +78,9 @@ namespace Dungeon2D
         RoomFloor,
         WoodenBridge,
         BridgeDoorClosed,
-        BridgeDoorOpen
+        BridgeDoorOpen,
+        WallHorizontal,
+        WallVertical
     }
 
     public enum CharacterSpriteId
