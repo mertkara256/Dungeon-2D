@@ -133,6 +133,18 @@ namespace Dungeon2D
             attackRoutine = StartCoroutine(AttackRoutine(attackAnimation));
         }
 
+        public void SetBaseVisualScale(float scale)
+        {
+            if (visualTransform == null)
+            {
+                visualTransform = targetRenderer != null ? targetRenderer.transform : transform;
+            }
+
+            visualTransform.localScale = Vector3.one * Mathf.Max(0.1f, scale);
+            CaptureBasePose();
+            ApplyVisualPosition();
+        }
+
         public void PlayHit(Color flashColor)
         {
             PlayHit(flashColor, 0.08f, 0f, damageShakeFrequency);

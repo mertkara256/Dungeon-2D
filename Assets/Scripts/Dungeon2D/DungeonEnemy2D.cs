@@ -114,6 +114,7 @@ namespace Dungeon2D
                 game.Art.GetCharacterAnimation(spriteId, DungeonSpriteAnimation.Walk),
                 game.Art.GetCharacterAnimation(spriteId, DungeonSpriteAnimation.PrimaryAttack),
                 game.Art.GetCharacterAnimation(spriteId, DungeonSpriteAnimation.SecondaryAttack));
+            visualAnimator.SetBaseVisualScale(Dungeon2DConfig.CharacterVisualScale);
             spriteRenderer = visualAnimator.Renderer;
 
             healthBar = GetComponent<Dungeon2DWorldHealthBar>();
@@ -124,7 +125,7 @@ namespace Dungeon2D
 
             float barWidth = enemyKind == EnemyKind.Tank ? 1.25f : enemyKind == EnemyKind.Minion ? 0.72f : 1f;
             float barHeight = enemyKind == EnemyKind.Tank ? 1.42f : enemyKind == EnemyKind.Minion ? 0.78f : 1.1f;
-            healthBar.Configure(barWidth, new Vector2(0f, barHeight), new Color(0.95f, 0.23f, 0.18f, 1f), 36);
+            healthBar.Configure(barWidth, new Vector2(0f, barHeight * Dungeon2DConfig.CharacterVisualScale), new Color(0.95f, 0.23f, 0.18f, 1f), 36);
             healthBar.SetRatio(HealthRatio);
         }
 

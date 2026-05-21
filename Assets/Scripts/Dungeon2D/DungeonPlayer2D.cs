@@ -32,6 +32,8 @@ namespace Dungeon2D
         private const float DashTrailInterval = 0.016f;
         private const float MeleeCooldown = 0.45f;
         private const float InvulnerabilityDuration = 0.25f;
+        private const float BodyScale = 0.94f;
+        private const float HealthBarYOffset = 1.55f;
 
         public bool IsDead { get; private set; }
 
@@ -73,7 +75,7 @@ namespace Dungeon2D
             }
 
             art.Apply(spriteRenderer, CharacterSpriteId.Hero, 20);
-            transform.localScale = Vector3.one * 0.94f;
+            transform.localScale = Vector3.one * BodyScale;
 
             visualAnimator = GetComponent<Dungeon2DVisualAnimator>();
             if (visualAnimator == null)
@@ -87,6 +89,7 @@ namespace Dungeon2D
                 art.GetCharacterAnimation(CharacterSpriteId.Hero, DungeonSpriteAnimation.Walk),
                 art.GetCharacterAnimation(CharacterSpriteId.Hero, DungeonSpriteAnimation.PrimaryAttack),
                 art.GetCharacterAnimation(CharacterSpriteId.Hero, DungeonSpriteAnimation.SecondaryAttack));
+            visualAnimator.SetBaseVisualScale(Dungeon2DConfig.CharacterVisualScale);
             spriteRenderer = visualAnimator.Renderer;
 
             healthBar = GetComponent<Dungeon2DWorldHealthBar>();
@@ -95,7 +98,7 @@ namespace Dungeon2D
                 healthBar = gameObject.AddComponent<Dungeon2DWorldHealthBar>();
             }
 
-            healthBar.Configure(1.35f, new Vector2(0f, 1.28f), new Color(0.26f, 0.95f, 0.42f, 1f), 38);
+            healthBar.Configure(1.35f, new Vector2(0f, HealthBarYOffset), new Color(0.26f, 0.95f, 0.42f, 1f), 38);
 
             ResetForRun();
         }
@@ -311,7 +314,8 @@ namespace Dungeon2D
             nextDashTrailAt = Time.time + DashTrailInterval;
             Sprite sprite = spriteRenderer != null ? spriteRenderer.sprite : null;
             bool flipX = spriteRenderer != null && spriteRenderer.flipX;
-            game.SpawnPlayerDashTrail(transform.position, dashDirection, sprite, transform.localScale, flipX);
+            Vector3 trailScale = spriteRenderer != null ? spriteRenderer.transform.lossyScale : transform.localScale;
+            game.SpawnPlayerDashTrail(transform.position, dashDirection, sprite, trailScale, flipX);
         }
 
         private void HandleCombatInput()

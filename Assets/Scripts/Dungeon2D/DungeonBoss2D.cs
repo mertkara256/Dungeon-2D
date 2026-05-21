@@ -104,6 +104,7 @@ namespace Dungeon2D
                 game.Art.GetCharacterAnimation(CharacterSpriteId.Boss, DungeonSpriteAnimation.Walk),
                 game.Art.GetCharacterAnimation(CharacterSpriteId.Boss, DungeonSpriteAnimation.PrimaryAttack),
                 game.Art.GetCharacterAnimation(CharacterSpriteId.Boss, DungeonSpriteAnimation.SecondaryAttack));
+            visualAnimator.SetBaseVisualScale(Dungeon2DConfig.CharacterVisualScale);
             spriteRenderer = visualAnimator.Renderer;
 
             healthBar = GetComponent<Dungeon2DWorldHealthBar>();
@@ -112,7 +113,7 @@ namespace Dungeon2D
                 healthBar = gameObject.AddComponent<Dungeon2DWorldHealthBar>();
             }
 
-            healthBar.Configure(2.35f, new Vector2(0f, 2.12f), new Color(0.78f, 0.15f, 0.95f, 1f), 37);
+            healthBar.Configure(2.35f, new Vector2(0f, 2.12f * Dungeon2DConfig.CharacterVisualScale), new Color(0.78f, 0.15f, 0.95f, 1f), 37);
 
             float safeDifficulty = Mathf.Max(0, difficultyLevel);
             maxHealth *= 1f + safeDifficulty * 0.06f;

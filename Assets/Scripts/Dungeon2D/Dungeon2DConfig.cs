@@ -22,6 +22,7 @@ namespace Dungeon2D
         public const float RoomWallThickness = 0.84f;
         public const float RoomWallPadding = 0.8f;
         public const float WallVisualScale = 0.92f;
+        public const float CharacterVisualScale = 1.3f;
         public const float DoorVerticalOffset = 0.22f;
         public const float DoorColliderHeight = 0.8f;
         public const float DoorClosedVisualHeight = 0.9f;
