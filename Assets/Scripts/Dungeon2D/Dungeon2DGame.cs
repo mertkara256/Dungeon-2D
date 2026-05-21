@@ -331,19 +331,16 @@ namespace Dungeon2D
         {
             room.Activated = true;
             currentRoom = room;
+            CloseDoorsForActivatedRoom(room);
             RefreshHud();
 
             if (room.Kind == RoomKind.Combat || room.Kind == RoomKind.Boss)
             {
-                room.EntranceDoor?.SetOpen(false);
-                room.ExitDoor?.SetOpen(false);
                 SpawnRoomWave(room);
                 Notify("Room " + (room.Index + 1) + ": clear all enemies");
                 return;
             }
 
-            room.EntranceDoor?.SetOpen(false);
-            room.ExitDoor?.SetOpen(false);
             if (room.Kind == RoomKind.Treasure)
             {
                 SpawnTreasureRewards(room);
@@ -356,6 +353,20 @@ namespace Dungeon2D
             }
 
             ClearRoom(room);
+        }
+
+        private void CloseDoorsForActivatedRoom(DungeonRoom2D room)
+        {
+            if (room == null)
+            {
+                return;
+            }
+
+            room.ExitDoor?.SetOpen(false);
+            if (room.Index > 0 && room.Index - 1 < rooms.Count)
+            {
+                rooms[room.Index - 1].ExitDoor?.SetOpen(false);
+            }
         }
 
         private void SpawnRoomWave(DungeonRoom2D room)
@@ -494,7 +505,6 @@ namespace Dungeon2D
             }
 
             room.Cleared = true;
-            room.EntranceDoor?.SetOpen(true);
             room.ExitDoor?.SetOpen(true);
 
             if (ShouldSpawnKeyReward(room))

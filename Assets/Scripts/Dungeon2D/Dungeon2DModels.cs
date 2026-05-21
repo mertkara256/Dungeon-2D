@@ -137,7 +137,6 @@ namespace Dungeon2D
         public Vector2 Center;
         public Vector2 Size;
         public Vector2 SpawnPoint;
-        public DungeonDoor2D EntranceDoor;
         public DungeonDoor2D ExitDoor;
         public bool Activated;
         public bool Cleared;
