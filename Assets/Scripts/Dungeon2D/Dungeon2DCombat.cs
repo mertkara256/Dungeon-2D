@@ -493,15 +493,24 @@ namespace Dungeon2D
 
             if (spriteRenderer != null && art != null)
             {
-                spriteRenderer.sprite = art.GetEnvironmentSprite(open ? EnvironmentSpriteId.Archway : EnvironmentSpriteId.Door);
-                spriteRenderer.color = open ? new Color(0.82f, 0.82f, 0.86f, 0.72f) : Color.white;
+                Sprite doorSprite = art.GetEnvironmentSprite(open ? EnvironmentSpriteId.BridgeDoorOpen : EnvironmentSpriteId.BridgeDoorClosed);
+                spriteRenderer.sprite = doorSprite;
+                spriteRenderer.color = Color.white;
                 spriteRenderer.sortingOrder = 8;
+                ApplyVisualWidth(doorSprite, open ? Dungeon2DConfig.BridgeDoorOpenVisualWidth : Dungeon2DConfig.BridgeDoorClosedVisualWidth);
+            }
+        }
+
+        private void ApplyVisualWidth(Sprite sprite, float targetWidth)
+        {
+            if (sprite == null || sprite.bounds.size.x <= 0f)
+            {
+                transform.localScale = Vector3.one;
+                return;
             }
 
-            if (!immediate)
-            {
-                transform.localScale = open ? new Vector3(1f, Dungeon2DConfig.DoorOpenVisualHeight, 1f) : Vector3.one;
-            }
+            float scale = targetWidth / sprite.bounds.size.x;
+            transform.localScale = Vector3.one * scale;
         }
     }
 

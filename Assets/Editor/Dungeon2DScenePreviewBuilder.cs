@@ -10,6 +10,7 @@ namespace Dungeon2D.EditorTools
     public static class Dungeon2DScenePreviewBuilder
     {
         public const string PreviewRootName = Dungeon2DConfig.EditModePreviewName;
+        private const string PreviewStyleMarkerName = "PreviewStyle_FloorBridgeV3";
 
         static Dungeon2DScenePreviewBuilder()
         {
@@ -44,8 +45,13 @@ namespace Dungeon2D.EditorTools
             GameObject existing = GameObject.Find(PreviewRootName);
             if (existing != null)
             {
-                EnsureCamera();
-                return;
+                if (IsPreviewCurrent(existing))
+                {
+                    EnsureCamera();
+                    return;
+                }
+
+                Object.DestroyImmediate(existing);
             }
 
             RebuildPreview(false);
@@ -61,7 +67,7 @@ namespace Dungeon2D.EditorTools
             GameObject existing = GameObject.Find(PreviewRootName);
             if (existing != null)
             {
-                if (!force)
+                if (!force && IsPreviewCurrent(existing))
                 {
                     EnsureCamera();
                     return;
@@ -73,6 +79,9 @@ namespace Dungeon2D.EditorTools
             Dungeon2DArtLibrary art = new Dungeon2DArtLibrary();
             GameObject root = new GameObject(PreviewRootName);
             root.transform.position = Vector3.zero;
+            GameObject marker = new GameObject(PreviewStyleMarkerName);
+            marker.hideFlags = HideFlags.HideInHierarchy;
+            marker.transform.SetParent(root.transform, false);
 
             float previousCenterY = 0f;
             float previousHeight = 0f;
@@ -101,6 +110,11 @@ namespace Dungeon2D.EditorTools
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         }
 
+        private static bool IsPreviewCurrent(GameObject existing)
+        {
+            return existing != null && existing.transform.Find(PreviewStyleMarkerName) != null;
+        }
+
         private static void BuildRoom(Dungeon2DArtLibrary art, Transform root, int index, RoomKind kind, Vector2 center, Vector2 size)
         {
             GameObject room = new GameObject("PreviewRoom_" + (index + 1) + "_" + kind);
@@ -108,31 +122,14 @@ namespace Dungeon2D.EditorTools
             room.transform.position = center;
 
             Rect bounds = new Rect(center.x - size.x * 0.5f, center.y - size.y * 0.5f, size.x, size.y);
-            int columns = Mathf.CeilToInt(size.x / Dungeon2DConfig.TileSize);
-            int rows = Mathf.CeilToInt(size.y / Dungeon2DConfig.TileSize);
-
-            for (int x = 0; x < columns; x++)
-            {
-                for (int y = 0; y < rows; y++)
-                {
-                    Vector2 position = new Vector2(
-                        bounds.xMin + Dungeon2DConfig.TileSize * 0.5f + x * Dungeon2DConfig.TileSize,
-                        bounds.yMin + Dungeon2DConfig.TileSize * 0.5f + y * Dungeon2DConfig.TileSize);
-                    EnvironmentSpriteId spriteId = Dungeon2DConfig.GetFloorSpriteId(x, y, index);
-
-                    CreateSprite("PreviewFloor", art.GetEnvironmentSprite(spriteId), room.transform, position, 0);
-                }
-            }
+            GameObject floor = CreateSprite("PreviewRoomFloor", art.GetEnvironmentSprite(EnvironmentSpriteId.RoomFloor), room.transform, center, 0);
+            ScaleSpriteToWorldSize(floor, size + Vector2.one * Dungeon2DConfig.RoomWallInset);
+            float halfBridgeGap = Dungeon2DConfig.BridgeWallVisualGapWidth * 0.5f;
 
             BuildWallVisualLine(art, room.transform, new Vector2(bounds.xMin, bounds.yMin), new Vector2(bounds.xMin, bounds.yMax), false);
             BuildWallVisualLine(art, room.transform, new Vector2(bounds.xMax, bounds.yMin), new Vector2(bounds.xMax, bounds.yMax), false);
-            BuildWallVisualLine(art, room.transform, new Vector2(bounds.xMin, bounds.yMin), new Vector2(bounds.xMax, bounds.yMin), true);
-            BuildWallVisualLine(art, room.transform, new Vector2(bounds.xMin, bounds.yMax), new Vector2(bounds.xMax, bounds.yMax), true);
-
-            if (index > 0)
-            {
-                CreateDoorPreview(art, room.transform, new Vector2(0f, bounds.yMin - Dungeon2DConfig.DoorVerticalOffset));
-            }
+            BuildWallVisualLine(art, room.transform, new Vector2(bounds.xMin, bounds.yMin), new Vector2(bounds.xMax, bounds.yMin), true, index > 0 ? halfBridgeGap : 0f);
+            BuildWallVisualLine(art, room.transform, new Vector2(bounds.xMin, bounds.yMax), new Vector2(bounds.xMax, bounds.yMax), true, index < Dungeon2DConfig.TargetRoomCount - 1 ? halfBridgeGap : 0f);
 
             if (index < Dungeon2DConfig.TargetRoomCount - 1)
             {
@@ -144,23 +141,13 @@ namespace Dungeon2D.EditorTools
         {
             GameObject corridor = new GameObject("PreviewCorridor_" + (index + 1));
             corridor.transform.SetParent(root, false);
-            int rows = Mathf.CeilToInt(Mathf.Abs(toY - fromY) / Dungeon2DConfig.TileSize);
-
-            for (int y = 0; y < rows; y++)
-            {
-                Vector2 position = new Vector2(0f, Mathf.Min(fromY, toY) + Dungeon2DConfig.TileSize * 0.5f + y * Dungeon2DConfig.TileSize);
-                CreateSprite("PreviewCorridorFloor", art.GetEnvironmentSprite(EnvironmentSpriteId.CrackedFloor), corridor.transform, position, 0);
-            }
-
-            for (int y = 0; y <= rows; y++)
-            {
-                float rowY = Mathf.Min(fromY, toY) + y * Dungeon2DConfig.TileSize;
-                CreateSprite("PreviewCorridorWallLeft", art.GetEnvironmentSprite(EnvironmentSpriteId.IronBars), corridor.transform, new Vector2(-Dungeon2DConfig.DoorWidth * 0.5f - Dungeon2DConfig.CorridorWallVisualInset, rowY), 7);
-                CreateSprite("PreviewCorridorWallRight", art.GetEnvironmentSprite(EnvironmentSpriteId.IronBars), corridor.transform, new Vector2(Dungeon2DConfig.DoorWidth * 0.5f + Dungeon2DConfig.CorridorWallVisualInset, rowY), 7);
-            }
+            float centerY = (fromY + toY) * 0.5f;
+            float height = Mathf.Abs(toY - fromY);
+            GameObject bridge = CreateSprite("PreviewWoodenBridge", art.GetEnvironmentSprite(EnvironmentSpriteId.WoodenBridge), corridor.transform, new Vector2(0f, centerY), 1);
+            ScaleSpriteToWorldSize(bridge, new Vector2(Dungeon2DConfig.BridgeVisualWidth, height + Dungeon2DConfig.BridgeVisualOverlap));
         }
 
-        private static void BuildWallVisualLine(Dungeon2DArtLibrary art, Transform parent, Vector2 start, Vector2 end, bool horizontal)
+        private static void BuildWallVisualLine(Dungeon2DArtLibrary art, Transform parent, Vector2 start, Vector2 end, bool horizontal, float centerGapHalfWidth = 0f)
         {
             float length = horizontal ? Mathf.Abs(end.x - start.x) : Mathf.Abs(end.y - start.y);
             int count = Mathf.Max(1, Mathf.CeilToInt(length / Dungeon2DConfig.TileSize));
@@ -168,6 +155,11 @@ namespace Dungeon2D.EditorTools
             {
                 float t = count == 0 ? 0f : i / (float)count;
                 Vector2 position = Vector2.Lerp(start, end, t);
+                if (horizontal && centerGapHalfWidth > 0f && Mathf.Abs(position.x) < centerGapHalfWidth)
+                {
+                    continue;
+                }
+
                 GameObject wall = CreateSprite("PreviewWall", art.GetEnvironmentSprite(EnvironmentSpriteId.Wall), parent, position, 6);
                 wall.transform.localScale = Vector3.one * Dungeon2DConfig.WallVisualScale;
             }
@@ -175,10 +167,8 @@ namespace Dungeon2D.EditorTools
 
         private static void CreateDoorPreview(Dungeon2DArtLibrary art, Transform parent, Vector2 position)
         {
-            GameObject door = CreateSprite("PreviewDoor", art.GetEnvironmentSprite(EnvironmentSpriteId.Archway), parent, position, 8);
-            door.transform.localScale = new Vector3(Dungeon2DConfig.DoorVisualWidth, Dungeon2DConfig.DoorOpenVisualHeight, 1f);
-            SpriteRenderer renderer = door.GetComponent<SpriteRenderer>();
-            renderer.color = new Color(0.82f, 0.82f, 0.86f, 0.72f);
+            GameObject door = CreateSprite("PreviewBridgeDoor", art.GetEnvironmentSprite(EnvironmentSpriteId.BridgeDoorOpen), parent, position, 8);
+            ScaleSpriteToWorldWidth(door, Dungeon2DConfig.BridgeDoorOpenVisualWidth);
         }
 
         private static GameObject CreateSprite(string name, Sprite sprite, Transform parent, Vector2 position, int sortingOrder)
@@ -190,6 +180,45 @@ namespace Dungeon2D.EditorTools
             renderer.sprite = sprite;
             renderer.sortingOrder = sortingOrder;
             return spriteObject;
+        }
+
+        private static void ScaleSpriteToWorldSize(GameObject spriteObject, Vector2 size)
+        {
+            if (spriteObject == null)
+            {
+                return;
+            }
+
+            SpriteRenderer renderer = spriteObject.GetComponent<SpriteRenderer>();
+            if (renderer == null || renderer.sprite == null)
+            {
+                return;
+            }
+
+            Vector2 spriteSize = renderer.sprite.bounds.size;
+            if (spriteSize.x <= 0f || spriteSize.y <= 0f)
+            {
+                return;
+            }
+
+            spriteObject.transform.localScale = new Vector3(size.x / spriteSize.x, size.y / spriteSize.y, 1f);
+        }
+
+        private static void ScaleSpriteToWorldWidth(GameObject spriteObject, float width)
+        {
+            if (spriteObject == null)
+            {
+                return;
+            }
+
+            SpriteRenderer renderer = spriteObject.GetComponent<SpriteRenderer>();
+            if (renderer == null || renderer.sprite == null || renderer.sprite.bounds.size.x <= 0f)
+            {
+                return;
+            }
+
+            float scale = width / renderer.sprite.bounds.size.x;
+            spriteObject.transform.localScale = Vector3.one * scale;
         }
 
         private static void EnsureCamera()

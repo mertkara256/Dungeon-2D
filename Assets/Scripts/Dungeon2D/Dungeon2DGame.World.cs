@@ -73,37 +73,27 @@ namespace Dungeon2D
                 SpawnPoint = center + new Vector2(0f, -size.y * 0.5f + Dungeon2DConfig.PlayerSpawnBottomPadding)
             };
 
-            BuildFloorTiles(room);
+            BuildRoomFloor(room);
             BuildWalls(room);
             return room;
         }
 
-        private void BuildFloorTiles(DungeonRoom2D room)
+        private void BuildRoomFloor(DungeonRoom2D room)
         {
-            Rect bounds = room.Bounds;
-            int columns = Mathf.CeilToInt(room.Size.x / Dungeon2DConfig.TileSize);
-            int rows = Mathf.CeilToInt(room.Size.y / Dungeon2DConfig.TileSize);
-            for (int x = 0; x < columns; x++)
-            {
-                for (int y = 0; y < rows; y++)
-                {
-                    Vector2 position = new Vector2(
-                        bounds.xMin + Dungeon2DConfig.TileSize * 0.5f + x * Dungeon2DConfig.TileSize,
-                        bounds.yMin + Dungeon2DConfig.TileSize * 0.5f + y * Dungeon2DConfig.TileSize);
-                    EnvironmentSpriteId spriteId = Dungeon2DConfig.GetFloorSpriteId(x, y, room.Index);
-                    CreateSpriteObject("FloorTile", Art.GetEnvironmentSprite(spriteId), room.Root.transform, position, 0);
-                }
-            }
+            GameObject floor = CreateSpriteObject("RoomFloor", Art.GetEnvironmentSprite(EnvironmentSpriteId.RoomFloor), room.Root.transform, room.Center, 0);
+            Vector2 visualSize = room.Size + Vector2.one * Dungeon2DConfig.RoomWallInset;
+            ScaleSpriteToWorldSize(floor, visualSize);
         }
 
         private void BuildWalls(DungeonRoom2D room)
         {
             Rect bounds = room.Bounds;
             float halfDoor = Dungeon2DConfig.DoorWidth * 0.5f;
+            float halfBridgeGap = Dungeon2DConfig.BridgeWallVisualGapWidth * 0.5f;
             BuildWallVisualLine(room.Root.transform, new Vector2(bounds.xMin, bounds.yMin), new Vector2(bounds.xMin, bounds.yMax), false);
             BuildWallVisualLine(room.Root.transform, new Vector2(bounds.xMax, bounds.yMin), new Vector2(bounds.xMax, bounds.yMax), false);
-            BuildWallVisualLine(room.Root.transform, new Vector2(bounds.xMin, bounds.yMin), new Vector2(bounds.xMax, bounds.yMin), true);
-            BuildWallVisualLine(room.Root.transform, new Vector2(bounds.xMin, bounds.yMax), new Vector2(bounds.xMax, bounds.yMax), true);
+            BuildWallVisualLine(room.Root.transform, new Vector2(bounds.xMin, bounds.yMin), new Vector2(bounds.xMax, bounds.yMin), true, room.Index > 0 ? halfBridgeGap : 0f);
+            BuildWallVisualLine(room.Root.transform, new Vector2(bounds.xMin, bounds.yMax), new Vector2(bounds.xMax, bounds.yMax), true, room.Index < Dungeon2DConfig.TargetRoomCount - 1 ? halfBridgeGap : 0f);
 
             AddWallCollider(room.Root.transform, "LeftWallCollider", new Vector2(bounds.xMin - Dungeon2DConfig.RoomWallInset, room.Center.y), new Vector2(Dungeon2DConfig.RoomWallThickness, room.Size.y + Dungeon2DConfig.RoomWallPadding));
             AddWallCollider(room.Root.transform, "RightWallCollider", new Vector2(bounds.xMax + Dungeon2DConfig.RoomWallInset, room.Center.y), new Vector2(Dungeon2DConfig.RoomWallThickness, room.Size.y + Dungeon2DConfig.RoomWallPadding));
@@ -112,7 +102,6 @@ namespace Dungeon2D
             {
                 AddWallCollider(room.Root.transform, "BottomWallLeft", new Vector2((bounds.xMin - halfDoor) * 0.5f, bounds.yMin - Dungeon2DConfig.RoomWallInset), new Vector2(room.Size.x * 0.5f - halfDoor, Dungeon2DConfig.RoomWallThickness));
                 AddWallCollider(room.Root.transform, "BottomWallRight", new Vector2((bounds.xMax + halfDoor) * 0.5f, bounds.yMin - Dungeon2DConfig.RoomWallInset), new Vector2(room.Size.x * 0.5f - halfDoor, Dungeon2DConfig.RoomWallThickness));
-                room.EntranceDoor = CreateDoor(room.Root.transform, new Vector2(0f, bounds.yMin - Dungeon2DConfig.DoorVerticalOffset), false);
             }
             else
             {
@@ -131,7 +120,7 @@ namespace Dungeon2D
             }
         }
 
-        private void BuildWallVisualLine(Transform parent, Vector2 start, Vector2 end, bool horizontal)
+        private void BuildWallVisualLine(Transform parent, Vector2 start, Vector2 end, bool horizontal, float centerGapHalfWidth = 0f)
         {
             float length = horizontal ? Mathf.Abs(end.x - start.x) : Mathf.Abs(end.y - start.y);
             int count = Mathf.Max(1, Mathf.CeilToInt(length / Dungeon2DConfig.TileSize));
@@ -139,6 +128,11 @@ namespace Dungeon2D
             {
                 float t = count == 0 ? 0f : i / (float)count;
                 Vector2 position = Vector2.Lerp(start, end, t);
+                if (horizontal && centerGapHalfWidth > 0f && Mathf.Abs(position.x) < centerGapHalfWidth)
+                {
+                    continue;
+                }
+
                 GameObject wall = CreateSpriteObject("WallTile", Art.GetEnvironmentSprite(EnvironmentSpriteId.Wall), parent, position, 6);
                 wall.transform.localScale = Vector3.one * Dungeon2DConfig.WallVisualScale;
             }
@@ -150,30 +144,18 @@ namespace Dungeon2D
             corridor.transform.SetParent(worldRoot, false);
             float centerY = (fromY + toY) * 0.5f;
             float height = Mathf.Abs(toY - fromY);
-            int rows = Mathf.CeilToInt(height / Dungeon2DConfig.TileSize);
 
-            for (int y = 0; y < rows; y++)
-            {
-                Vector2 position = new Vector2(0f, Mathf.Min(fromY, toY) + Dungeon2DConfig.TileSize * 0.5f + y * Dungeon2DConfig.TileSize);
-                CreateSpriteObject("CorridorFloor", Art.GetEnvironmentSprite(EnvironmentSpriteId.CrackedFloor), corridor.transform, position, 0);
-            }
+            GameObject bridge = CreateSpriteObject("WoodenBridge", Art.GetEnvironmentSprite(EnvironmentSpriteId.WoodenBridge), corridor.transform, new Vector2(0f, centerY), 1);
+            ScaleSpriteToWorldSize(bridge, new Vector2(Dungeon2DConfig.BridgeVisualWidth, height + Dungeon2DConfig.BridgeVisualOverlap));
 
             float halfDoor = Dungeon2DConfig.DoorWidth * 0.5f;
             AddWallCollider(corridor.transform, "CorridorLeftWall", new Vector2(-halfDoor - Dungeon2DConfig.RoomWallInset, centerY), new Vector2(Dungeon2DConfig.RoomWallThickness, height));
             AddWallCollider(corridor.transform, "CorridorRightWall", new Vector2(halfDoor + Dungeon2DConfig.RoomWallInset, centerY), new Vector2(Dungeon2DConfig.RoomWallThickness, height));
-
-            for (int y = 0; y <= rows; y++)
-            {
-                float rowY = Mathf.Min(fromY, toY) + y * Dungeon2DConfig.TileSize;
-                CreateSpriteObject("CorridorWallLeft", Art.GetEnvironmentSprite(EnvironmentSpriteId.IronBars), corridor.transform, new Vector2(-halfDoor - Dungeon2DConfig.CorridorWallVisualInset, rowY), 7);
-                CreateSpriteObject("CorridorWallRight", Art.GetEnvironmentSprite(EnvironmentSpriteId.IronBars), corridor.transform, new Vector2(halfDoor + Dungeon2DConfig.CorridorWallVisualInset, rowY), 7);
-            }
         }
 
         private DungeonDoor2D CreateDoor(Transform parent, Vector2 position, bool exit)
         {
-            GameObject doorObject = CreateSpriteObject(exit ? "ExitDoor" : "EntranceDoor", Art.GetEnvironmentSprite(EnvironmentSpriteId.Door), parent, position, 8);
-            doorObject.transform.localScale = new Vector3(Dungeon2DConfig.DoorVisualWidth, Dungeon2DConfig.DoorClosedVisualHeight, 1f);
+            GameObject doorObject = CreateSpriteObject(exit ? "ExitBridgeDoor" : "EntranceBridgeDoor", Art.GetEnvironmentSprite(EnvironmentSpriteId.BridgeDoorClosed), parent, position, 8);
             BoxCollider2D collider = doorObject.AddComponent<BoxCollider2D>();
             collider.size = new Vector2(Dungeon2DConfig.DoorWidth, Dungeon2DConfig.DoorColliderHeight);
             collider.sharedMaterial = Dungeon2DPhysics.Material;
@@ -201,6 +183,28 @@ namespace Dungeon2D
             renderer.sprite = sprite;
             renderer.sortingOrder = sortingOrder;
             return spriteObject;
+        }
+
+        private static void ScaleSpriteToWorldSize(GameObject spriteObject, Vector2 size)
+        {
+            if (spriteObject == null)
+            {
+                return;
+            }
+
+            SpriteRenderer renderer = spriteObject.GetComponent<SpriteRenderer>();
+            if (renderer == null || renderer.sprite == null)
+            {
+                return;
+            }
+
+            Vector2 spriteSize = renderer.sprite.bounds.size;
+            if (spriteSize.x <= 0f || spriteSize.y <= 0f)
+            {
+                return;
+            }
+
+            spriteObject.transform.localScale = new Vector3(size.x / spriteSize.x, size.y / spriteSize.y, 1f);
         }
 
         private void ClearRun()

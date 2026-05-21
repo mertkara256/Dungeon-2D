@@ -19,6 +19,10 @@ namespace Dungeon2D
         private readonly Dictionary<string, Sprite[]> characterAnimations = new Dictionary<string, Sprite[]>();
         private Texture2D environmentAtlas;
         private Texture2D propAtlas;
+        private Texture2D roomFloorTexture;
+        private Texture2D woodenBridgeTexture;
+        private Texture2D bridgeDoorClosedTexture;
+        private Texture2D bridgeDoorOpenTexture;
         private Texture2D characterSheet;
         private Texture2D animationSheet;
         private Texture2D projectileTexture;
@@ -107,6 +111,10 @@ namespace Dungeon2D
             fallbackSprite = BuildFallbackSprite();
             environmentAtlas = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_environment_atlas");
             propAtlas = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_prop_cutouts");
+            roomFloorTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_room_floor_single");
+            woodenBridgeTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_wooden_bridge");
+            bridgeDoorClosedTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_bridge_gate_closed");
+            bridgeDoorOpenTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_bridge_gate_open");
             characterSheet = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_character_sheet");
             animationSheet = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_animation_sheet");
             projectileTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_projectile_sprite");
@@ -121,6 +129,8 @@ namespace Dungeon2D
             {
                 BuildPropSprites();
             }
+
+            BuildStandaloneEnvironmentSprites();
 
             if (characterSheet != null)
             {
@@ -158,6 +168,19 @@ namespace Dungeon2D
             AddEnvironment(EnvironmentSpriteId.HazardRune, 1, 0);
             AddEnvironment(EnvironmentSpriteId.Slash, 2, 0);
             AddEnvironment(EnvironmentSpriteId.Panel, 3, 0);
+        }
+
+        private void BuildStandaloneEnvironmentSprites()
+        {
+            AddStandaloneEnvironment(EnvironmentSpriteId.RoomFloor, roomFloorTexture, EnvironmentPixelsPerUnit);
+            AddStandaloneEnvironment(EnvironmentSpriteId.WoodenBridge, woodenBridgeTexture, EnvironmentPixelsPerUnit);
+            AddStandaloneEnvironment(EnvironmentSpriteId.BridgeDoorClosed, bridgeDoorClosedTexture, EnvironmentPixelsPerUnit);
+            AddStandaloneEnvironment(EnvironmentSpriteId.BridgeDoorOpen, bridgeDoorOpenTexture, EnvironmentPixelsPerUnit);
+
+            UseEnvironmentFallback(EnvironmentSpriteId.RoomFloor, EnvironmentSpriteId.Floor);
+            UseEnvironmentFallback(EnvironmentSpriteId.WoodenBridge, EnvironmentSpriteId.CrackedFloor);
+            UseEnvironmentFallback(EnvironmentSpriteId.BridgeDoorClosed, EnvironmentSpriteId.Door);
+            UseEnvironmentFallback(EnvironmentSpriteId.BridgeDoorOpen, EnvironmentSpriteId.Archway);
         }
 
         private void BuildPropSprites()
@@ -212,6 +235,30 @@ namespace Dungeon2D
             int cellHeight = propAtlas.height / 4;
             Rect rect = new Rect(column * cellWidth, rowFromBottom * cellHeight, cellWidth, cellHeight);
             environmentSprites[id] = Sprite.Create(propAtlas, rect, new Vector2(0.5f, 0.5f), PropPixelsPerUnit, 0, SpriteMeshType.FullRect);
+        }
+
+        private void AddStandaloneEnvironment(EnvironmentSpriteId id, Texture2D texture, float pixelsPerUnit)
+        {
+            if (texture == null)
+            {
+                return;
+            }
+
+            Rect rect = new Rect(0f, 0f, texture.width, texture.height);
+            environmentSprites[id] = Sprite.Create(texture, rect, new Vector2(0.5f, 0.5f), pixelsPerUnit, 0, SpriteMeshType.FullRect);
+        }
+
+        private void UseEnvironmentFallback(EnvironmentSpriteId target, EnvironmentSpriteId fallback)
+        {
+            if (environmentSprites.ContainsKey(target))
+            {
+                return;
+            }
+
+            if (environmentSprites.TryGetValue(fallback, out Sprite sprite) && sprite != null)
+            {
+                environmentSprites[target] = sprite;
+            }
         }
 
         private void AddCharacter(CharacterSpriteId id, int column, int rowFromBottom)

@@ -74,7 +74,11 @@ namespace Dungeon2D
         Projectile,
         HazardRune,
         Slash,
-        Panel
+        Panel,
+        RoomFloor,
+        WoodenBridge,
+        BridgeDoorClosed,
+        BridgeDoorOpen
     }
 
     public enum CharacterSpriteId
