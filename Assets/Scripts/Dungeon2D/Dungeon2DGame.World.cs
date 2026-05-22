@@ -74,6 +74,7 @@ namespace Dungeon2D
             };
 
             BuildRoomFloor(room);
+            BuildWallContactShadows(room);
             BuildWalls(room);
             return room;
         }
@@ -147,6 +148,56 @@ namespace Dungeon2D
             EnvironmentSpriteId spriteId = horizontal ? EnvironmentSpriteId.WallHorizontal : EnvironmentSpriteId.WallVertical;
             GameObject wall = CreateSpriteObject(horizontal ? "HorizontalWall" : "VerticalWall", Art.GetEnvironmentSprite(spriteId), parent, center, 6);
             ScaleSpriteToWorldSize(wall, size);
+        }
+
+        private void BuildWallContactShadows(DungeonRoom2D room)
+        {
+            Rect bounds = room.Bounds;
+            float halfBridgeGap = Dungeon2DConfig.BridgeWallVisualGapWidth * 0.5f;
+
+            BuildWallContactShadowLine(room.Root.transform, new Vector2(bounds.xMin, bounds.yMin), new Vector2(bounds.xMin, bounds.yMax), false, 1f);
+            BuildWallContactShadowLine(room.Root.transform, new Vector2(bounds.xMax, bounds.yMin), new Vector2(bounds.xMax, bounds.yMax), false, -1f);
+            BuildWallContactShadowLine(room.Root.transform, new Vector2(bounds.xMin, bounds.yMin), new Vector2(bounds.xMax, bounds.yMin), true, 1f, room.Index > 0 ? halfBridgeGap : 0f);
+            BuildWallContactShadowLine(room.Root.transform, new Vector2(bounds.xMin, bounds.yMax), new Vector2(bounds.xMax, bounds.yMax), true, -1f, room.Index < Dungeon2DConfig.TargetRoomCount - 1 ? halfBridgeGap : 0f);
+        }
+
+        private void BuildWallContactShadowLine(Transform parent, Vector2 start, Vector2 end, bool horizontal, float inwardSign, float centerGapHalfWidth = 0f)
+        {
+            if (horizontal && centerGapHalfWidth > 0f)
+            {
+                BuildWallContactShadowSegment(parent, start, new Vector2(-centerGapHalfWidth, start.y), true, inwardSign);
+                BuildWallContactShadowSegment(parent, new Vector2(centerGapHalfWidth, end.y), end, true, inwardSign);
+                return;
+            }
+
+            BuildWallContactShadowSegment(parent, start, end, horizontal, inwardSign);
+        }
+
+        private void BuildWallContactShadowSegment(Transform parent, Vector2 start, Vector2 end, bool horizontal, float inwardSign)
+        {
+            float length = horizontal ? Mathf.Abs(end.x - start.x) : Mathf.Abs(end.y - start.y);
+            if (length <= 0.05f)
+            {
+                return;
+            }
+
+            float width = Dungeon2DConfig.WallContactShadowWidth;
+            Vector2 center = (start + end) * 0.5f;
+            center += horizontal
+                ? Vector2.up * inwardSign * width * 0.5f
+                : Vector2.right * inwardSign * width * 0.5f;
+
+            Vector2 size = horizontal ? new Vector2(length, width) : new Vector2(width, length);
+            EnvironmentSpriteId spriteId = horizontal ? EnvironmentSpriteId.WallShadowHorizontal : EnvironmentSpriteId.WallShadowVertical;
+            GameObject shadow = CreateSpriteObject(horizontal ? "HorizontalWallContactShadow" : "VerticalWallContactShadow", Art.GetEnvironmentSprite(spriteId), parent, center, 2);
+            ScaleSpriteToWorldSize(shadow, size);
+
+            SpriteRenderer renderer = shadow.GetComponent<SpriteRenderer>();
+            if (renderer != null)
+            {
+                renderer.flipX = !horizontal && inwardSign < 0f;
+                renderer.flipY = horizontal && inwardSign > 0f;
+            }
         }
 
         private void BuildCorridor(int index, float fromY, float toY)

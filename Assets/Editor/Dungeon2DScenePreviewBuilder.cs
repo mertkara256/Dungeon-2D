@@ -10,7 +10,7 @@ namespace Dungeon2D.EditorTools
     public static class Dungeon2DScenePreviewBuilder
     {
         public const string PreviewRootName = Dungeon2DConfig.EditModePreviewName;
-        private const string PreviewStyleMarkerName = "PreviewStyle_FloorBridgeWallV4";
+        private const string PreviewStyleMarkerName = "PreviewStyle_FloorBridgeWallV5";
 
         static Dungeon2DScenePreviewBuilder()
         {
@@ -126,6 +126,11 @@ namespace Dungeon2D.EditorTools
             ScaleSpriteToWorldSize(floor, size + Vector2.one * Dungeon2DConfig.RoomWallInset);
             float halfBridgeGap = Dungeon2DConfig.BridgeWallVisualGapWidth * 0.5f;
 
+            BuildWallContactShadowLine(art, room.transform, new Vector2(bounds.xMin, bounds.yMin), new Vector2(bounds.xMin, bounds.yMax), false, 1f);
+            BuildWallContactShadowLine(art, room.transform, new Vector2(bounds.xMax, bounds.yMin), new Vector2(bounds.xMax, bounds.yMax), false, -1f);
+            BuildWallContactShadowLine(art, room.transform, new Vector2(bounds.xMin, bounds.yMin), new Vector2(bounds.xMax, bounds.yMin), true, 1f, index > 0 ? halfBridgeGap : 0f);
+            BuildWallContactShadowLine(art, room.transform, new Vector2(bounds.xMin, bounds.yMax), new Vector2(bounds.xMax, bounds.yMax), true, -1f, index < Dungeon2DConfig.TargetRoomCount - 1 ? halfBridgeGap : 0f);
+
             BuildWallVisualLine(art, room.transform, new Vector2(bounds.xMin, bounds.yMin), new Vector2(bounds.xMin, bounds.yMax), false);
             BuildWallVisualLine(art, room.transform, new Vector2(bounds.xMax, bounds.yMin), new Vector2(bounds.xMax, bounds.yMax), false);
             BuildWallVisualLine(art, room.transform, new Vector2(bounds.xMin, bounds.yMin), new Vector2(bounds.xMax, bounds.yMin), true, index > 0 ? halfBridgeGap : 0f);
@@ -174,6 +179,45 @@ namespace Dungeon2D.EditorTools
             EnvironmentSpriteId spriteId = horizontal ? EnvironmentSpriteId.WallHorizontal : EnvironmentSpriteId.WallVertical;
             GameObject wall = CreateSprite(horizontal ? "PreviewHorizontalWall" : "PreviewVerticalWall", art.GetEnvironmentSprite(spriteId), parent, center, 6);
             ScaleSpriteToWorldSize(wall, size);
+        }
+
+        private static void BuildWallContactShadowLine(Dungeon2DArtLibrary art, Transform parent, Vector2 start, Vector2 end, bool horizontal, float inwardSign, float centerGapHalfWidth = 0f)
+        {
+            if (horizontal && centerGapHalfWidth > 0f)
+            {
+                BuildWallContactShadowSegment(art, parent, start, new Vector2(-centerGapHalfWidth, start.y), true, inwardSign);
+                BuildWallContactShadowSegment(art, parent, new Vector2(centerGapHalfWidth, end.y), end, true, inwardSign);
+                return;
+            }
+
+            BuildWallContactShadowSegment(art, parent, start, end, horizontal, inwardSign);
+        }
+
+        private static void BuildWallContactShadowSegment(Dungeon2DArtLibrary art, Transform parent, Vector2 start, Vector2 end, bool horizontal, float inwardSign)
+        {
+            float length = horizontal ? Mathf.Abs(end.x - start.x) : Mathf.Abs(end.y - start.y);
+            if (length <= 0.05f)
+            {
+                return;
+            }
+
+            float width = Dungeon2DConfig.WallContactShadowWidth;
+            Vector2 center = (start + end) * 0.5f;
+            center += horizontal
+                ? Vector2.up * inwardSign * width * 0.5f
+                : Vector2.right * inwardSign * width * 0.5f;
+
+            Vector2 size = horizontal ? new Vector2(length, width) : new Vector2(width, length);
+            EnvironmentSpriteId spriteId = horizontal ? EnvironmentSpriteId.WallShadowHorizontal : EnvironmentSpriteId.WallShadowVertical;
+            GameObject shadow = CreateSprite(horizontal ? "PreviewHorizontalWallContactShadow" : "PreviewVerticalWallContactShadow", art.GetEnvironmentSprite(spriteId), parent, center, 2);
+            ScaleSpriteToWorldSize(shadow, size);
+
+            SpriteRenderer renderer = shadow.GetComponent<SpriteRenderer>();
+            if (renderer != null)
+            {
+                renderer.flipX = !horizontal && inwardSign < 0f;
+                renderer.flipY = horizontal && inwardSign > 0f;
+            }
         }
 
         private static void CreateDoorPreview(Dungeon2DArtLibrary art, Transform parent, Vector2 position)

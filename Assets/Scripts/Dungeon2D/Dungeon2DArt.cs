@@ -25,6 +25,8 @@ namespace Dungeon2D
         private Texture2D bridgeDoorOpenTexture;
         private Texture2D wallHorizontalTexture;
         private Texture2D wallVerticalTexture;
+        private Texture2D wallShadowHorizontalTexture;
+        private Texture2D wallShadowVerticalTexture;
         private Texture2D characterSheet;
         private Texture2D animationSheet;
         private Texture2D projectileTexture;
@@ -114,11 +116,13 @@ namespace Dungeon2D
             environmentAtlas = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_environment_atlas");
             propAtlas = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_prop_cutouts");
             roomFloorTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_room_floor_single");
-            woodenBridgeTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_wooden_bridge");
-            bridgeDoorClosedTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_bridge_gate_closed");
-            bridgeDoorOpenTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_bridge_gate_open");
-            wallHorizontalTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_wall_horizontal");
-            wallVerticalTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_wall_vertical");
+            woodenBridgeTexture = LoadTexture("Dungeon2D/Art/dungeon_wooden_bridge_raised_v2", "Dungeon2D/Art/dungeon_wooden_bridge");
+            bridgeDoorClosedTexture = LoadTexture("Dungeon2D/Art/dungeon_bridge_gate_closed_raised_v2", "Dungeon2D/Art/dungeon_bridge_gate_closed");
+            bridgeDoorOpenTexture = LoadTexture("Dungeon2D/Art/dungeon_bridge_gate_open_raised_v2", "Dungeon2D/Art/dungeon_bridge_gate_open");
+            wallHorizontalTexture = LoadTexture("Dungeon2D/Art/dungeon_wall_horizontal_raised_v2", "Dungeon2D/Art/dungeon_wall_horizontal");
+            wallVerticalTexture = LoadTexture("Dungeon2D/Art/dungeon_wall_vertical_raised_v2", "Dungeon2D/Art/dungeon_wall_vertical");
+            wallShadowHorizontalTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_wall_shadow_horizontal_v2");
+            wallShadowVerticalTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_wall_shadow_vertical_v2");
             characterSheet = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_character_sheet");
             animationSheet = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_animation_sheet");
             projectileTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_projectile_sprite");
@@ -182,6 +186,8 @@ namespace Dungeon2D
             AddStandaloneEnvironment(EnvironmentSpriteId.BridgeDoorOpen, bridgeDoorOpenTexture, EnvironmentPixelsPerUnit);
             AddStandaloneEnvironment(EnvironmentSpriteId.WallHorizontal, wallHorizontalTexture, EnvironmentPixelsPerUnit);
             AddStandaloneEnvironment(EnvironmentSpriteId.WallVertical, wallVerticalTexture, EnvironmentPixelsPerUnit);
+            AddStandaloneEnvironment(EnvironmentSpriteId.WallShadowHorizontal, wallShadowHorizontalTexture, EnvironmentPixelsPerUnit);
+            AddStandaloneEnvironment(EnvironmentSpriteId.WallShadowVertical, wallShadowVerticalTexture, EnvironmentPixelsPerUnit);
 
             UseEnvironmentFallback(EnvironmentSpriteId.RoomFloor, EnvironmentSpriteId.Floor);
             UseEnvironmentFallback(EnvironmentSpriteId.WoodenBridge, EnvironmentSpriteId.CrackedFloor);
@@ -189,6 +195,12 @@ namespace Dungeon2D
             UseEnvironmentFallback(EnvironmentSpriteId.BridgeDoorOpen, EnvironmentSpriteId.Archway);
             UseEnvironmentFallback(EnvironmentSpriteId.WallHorizontal, EnvironmentSpriteId.Wall);
             UseEnvironmentFallback(EnvironmentSpriteId.WallVertical, EnvironmentSpriteId.Wall);
+        }
+
+        private static Texture2D LoadTexture(string primaryPath, string fallbackPath)
+        {
+            Texture2D texture = Resources.Load<Texture2D>(primaryPath);
+            return texture != null ? texture : Resources.Load<Texture2D>(fallbackPath);
         }
 
         private void BuildPropSprites()
