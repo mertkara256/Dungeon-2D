@@ -82,7 +82,8 @@ namespace Dungeon2D
         WallHorizontal,
         WallVertical,
         WallShadowHorizontal,
-        WallShadowVertical
+        WallShadowVertical,
+        WallCornerPillar
     }
 
     public enum CharacterSpriteId

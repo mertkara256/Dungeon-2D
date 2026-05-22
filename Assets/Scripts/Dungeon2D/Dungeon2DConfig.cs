@@ -23,6 +23,7 @@ namespace Dungeon2D
         public const float RoomWallPadding = 0.8f;
         public const float WallVisualScale = 0.92f;
         public const float WallVisualThickness = 1.72f;
+        public const float WallCornerSize = WallVisualThickness;
         public const float WallContactShadowWidth = 0.55f;
         public const float CharacterVisualScale = 1.3f;
         public const float DoorVerticalOffset = 0.02f;
@@ -32,7 +33,7 @@ namespace Dungeon2D
         public const float DoorVisualWidth = 1.55f;
         public const float BridgeVisualWidth = 4.75f;
         public const float BridgeVisualOverlap = 1.25f;
-        public const float BridgeWallVisualGapWidth = 5.05f;
+        public const float BridgeWallVisualGapWidth = 5.15f;
         public const float BridgeDoorClosedVisualWidth = 4.75f;
         public const float BridgeDoorOpenVisualWidth = 4.95f;
         public const float CorridorWallVisualInset = 0.45f;

@@ -91,10 +91,12 @@ namespace Dungeon2D
             Rect bounds = room.Bounds;
             float halfDoor = Dungeon2DConfig.DoorWidth * 0.5f;
             float halfBridgeGap = Dungeon2DConfig.BridgeWallVisualGapWidth * 0.5f;
-            BuildWallVisualLine(room.Root.transform, new Vector2(bounds.xMin, bounds.yMin), new Vector2(bounds.xMin, bounds.yMax), false);
-            BuildWallVisualLine(room.Root.transform, new Vector2(bounds.xMax, bounds.yMin), new Vector2(bounds.xMax, bounds.yMax), false);
-            BuildWallVisualLine(room.Root.transform, new Vector2(bounds.xMin, bounds.yMin), new Vector2(bounds.xMax, bounds.yMin), true, room.Index > 0 ? halfBridgeGap : 0f);
-            BuildWallVisualLine(room.Root.transform, new Vector2(bounds.xMin, bounds.yMax), new Vector2(bounds.xMax, bounds.yMax), true, room.Index < Dungeon2DConfig.TargetRoomCount - 1 ? halfBridgeGap : 0f);
+            float cornerInset = Dungeon2DConfig.WallCornerSize * 0.5f;
+            BuildWallCornerPillars(room.Root.transform, bounds);
+            BuildWallVisualLine(room.Root.transform, new Vector2(bounds.xMin, bounds.yMin + cornerInset), new Vector2(bounds.xMin, bounds.yMax - cornerInset), false, 0f, false, false);
+            BuildWallVisualLine(room.Root.transform, new Vector2(bounds.xMax, bounds.yMin + cornerInset), new Vector2(bounds.xMax, bounds.yMax - cornerInset), false, 0f, true, false);
+            BuildWallVisualLine(room.Root.transform, new Vector2(bounds.xMin + cornerInset, bounds.yMin), new Vector2(bounds.xMax - cornerInset, bounds.yMin), true, room.Index > 0 ? halfBridgeGap : 0f, false, true);
+            BuildWallVisualLine(room.Root.transform, new Vector2(bounds.xMin + cornerInset, bounds.yMax), new Vector2(bounds.xMax - cornerInset, bounds.yMax), true, room.Index < Dungeon2DConfig.TargetRoomCount - 1 ? halfBridgeGap : 0f, false, false);
 
             AddWallCollider(room.Root.transform, "LeftWallCollider", new Vector2(bounds.xMin - Dungeon2DConfig.RoomWallInset, room.Center.y), new Vector2(Dungeon2DConfig.RoomWallThickness, room.Size.y + Dungeon2DConfig.RoomWallPadding));
             AddWallCollider(room.Root.transform, "RightWallCollider", new Vector2(bounds.xMax + Dungeon2DConfig.RoomWallInset, room.Center.y), new Vector2(Dungeon2DConfig.RoomWallThickness, room.Size.y + Dungeon2DConfig.RoomWallPadding));
@@ -121,19 +123,19 @@ namespace Dungeon2D
             }
         }
 
-        private void BuildWallVisualLine(Transform parent, Vector2 start, Vector2 end, bool horizontal, float centerGapHalfWidth = 0f)
+        private void BuildWallVisualLine(Transform parent, Vector2 start, Vector2 end, bool horizontal, float centerGapHalfWidth = 0f, bool flipX = false, bool flipY = false)
         {
             if (horizontal && centerGapHalfWidth > 0f)
             {
-                BuildWallVisualSegment(parent, start, new Vector2(-centerGapHalfWidth, start.y), true);
-                BuildWallVisualSegment(parent, new Vector2(centerGapHalfWidth, end.y), end, true);
+                BuildWallVisualSegment(parent, start, new Vector2(-centerGapHalfWidth, start.y), true, flipX, flipY);
+                BuildWallVisualSegment(parent, new Vector2(centerGapHalfWidth, end.y), end, true, flipX, flipY);
                 return;
             }
 
-            BuildWallVisualSegment(parent, start, end, horizontal);
+            BuildWallVisualSegment(parent, start, end, horizontal, flipX, flipY);
         }
 
-        private void BuildWallVisualSegment(Transform parent, Vector2 start, Vector2 end, bool horizontal)
+        private void BuildWallVisualSegment(Transform parent, Vector2 start, Vector2 end, bool horizontal, bool flipX, bool flipY)
         {
             float length = horizontal ? Mathf.Abs(end.x - start.x) : Mathf.Abs(end.y - start.y);
             if (length <= 0.05f)
@@ -148,6 +150,34 @@ namespace Dungeon2D
             EnvironmentSpriteId spriteId = horizontal ? EnvironmentSpriteId.WallHorizontal : EnvironmentSpriteId.WallVertical;
             GameObject wall = CreateSpriteObject(horizontal ? "HorizontalWall" : "VerticalWall", Art.GetEnvironmentSprite(spriteId), parent, center, 6);
             ScaleSpriteToWorldSize(wall, size);
+
+            SpriteRenderer renderer = wall.GetComponent<SpriteRenderer>();
+            if (renderer != null)
+            {
+                renderer.flipX = flipX;
+                renderer.flipY = flipY;
+            }
+        }
+
+        private void BuildWallCornerPillars(Transform parent, Rect bounds)
+        {
+            BuildWallCornerPillar(parent, new Vector2(bounds.xMin, bounds.yMin), false, true);
+            BuildWallCornerPillar(parent, new Vector2(bounds.xMax, bounds.yMin), true, true);
+            BuildWallCornerPillar(parent, new Vector2(bounds.xMin, bounds.yMax), false, false);
+            BuildWallCornerPillar(parent, new Vector2(bounds.xMax, bounds.yMax), true, false);
+        }
+
+        private void BuildWallCornerPillar(Transform parent, Vector2 position, bool flipX, bool flipY)
+        {
+            GameObject pillar = CreateSpriteObject("WallCornerPillar", Art.GetEnvironmentSprite(EnvironmentSpriteId.WallCornerPillar), parent, position, 7);
+            ScaleSpriteToWorldSize(pillar, Vector2.one * Dungeon2DConfig.WallCornerSize);
+
+            SpriteRenderer renderer = pillar.GetComponent<SpriteRenderer>();
+            if (renderer != null)
+            {
+                renderer.flipX = flipX;
+                renderer.flipY = flipY;
+            }
         }
 
         private void BuildWallContactShadows(DungeonRoom2D room)

@@ -27,6 +27,7 @@ namespace Dungeon2D
         private Texture2D wallVerticalTexture;
         private Texture2D wallShadowHorizontalTexture;
         private Texture2D wallShadowVerticalTexture;
+        private Texture2D wallCornerPillarTexture;
         private Texture2D characterSheet;
         private Texture2D animationSheet;
         private Texture2D projectileTexture;
@@ -116,13 +117,14 @@ namespace Dungeon2D
             environmentAtlas = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_environment_atlas");
             propAtlas = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_prop_cutouts");
             roomFloorTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_room_floor_single");
-            woodenBridgeTexture = LoadTexture("Dungeon2D/Art/dungeon_wooden_bridge_raised_v2", "Dungeon2D/Art/dungeon_wooden_bridge");
-            bridgeDoorClosedTexture = LoadTexture("Dungeon2D/Art/dungeon_bridge_gate_closed_raised_v2", "Dungeon2D/Art/dungeon_bridge_gate_closed");
-            bridgeDoorOpenTexture = LoadTexture("Dungeon2D/Art/dungeon_bridge_gate_open_raised_v2", "Dungeon2D/Art/dungeon_bridge_gate_open");
-            wallHorizontalTexture = LoadTexture("Dungeon2D/Art/dungeon_wall_horizontal_raised_v2", "Dungeon2D/Art/dungeon_wall_horizontal");
-            wallVerticalTexture = LoadTexture("Dungeon2D/Art/dungeon_wall_vertical_raised_v2", "Dungeon2D/Art/dungeon_wall_vertical");
+            woodenBridgeTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_wooden_bridge_raised_v2");
+            bridgeDoorClosedTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_bridge_gate_closed_raised_v2");
+            bridgeDoorOpenTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_bridge_gate_open_raised_v2");
+            wallHorizontalTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_wall_horizontal_body_v3");
+            wallVerticalTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_wall_vertical_body_v3");
             wallShadowHorizontalTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_wall_shadow_horizontal_v2");
             wallShadowVerticalTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_wall_shadow_vertical_v2");
+            wallCornerPillarTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_wall_corner_pillar_v3");
             characterSheet = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_character_sheet");
             animationSheet = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_animation_sheet");
             projectileTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_projectile_sprite");
@@ -188,6 +190,7 @@ namespace Dungeon2D
             AddStandaloneEnvironment(EnvironmentSpriteId.WallVertical, wallVerticalTexture, EnvironmentPixelsPerUnit);
             AddStandaloneEnvironment(EnvironmentSpriteId.WallShadowHorizontal, wallShadowHorizontalTexture, EnvironmentPixelsPerUnit);
             AddStandaloneEnvironment(EnvironmentSpriteId.WallShadowVertical, wallShadowVerticalTexture, EnvironmentPixelsPerUnit);
+            AddStandaloneEnvironment(EnvironmentSpriteId.WallCornerPillar, wallCornerPillarTexture, EnvironmentPixelsPerUnit);
 
             UseEnvironmentFallback(EnvironmentSpriteId.RoomFloor, EnvironmentSpriteId.Floor);
             UseEnvironmentFallback(EnvironmentSpriteId.WoodenBridge, EnvironmentSpriteId.CrackedFloor);
@@ -195,12 +198,7 @@ namespace Dungeon2D
             UseEnvironmentFallback(EnvironmentSpriteId.BridgeDoorOpen, EnvironmentSpriteId.Archway);
             UseEnvironmentFallback(EnvironmentSpriteId.WallHorizontal, EnvironmentSpriteId.Wall);
             UseEnvironmentFallback(EnvironmentSpriteId.WallVertical, EnvironmentSpriteId.Wall);
-        }
-
-        private static Texture2D LoadTexture(string primaryPath, string fallbackPath)
-        {
-            Texture2D texture = Resources.Load<Texture2D>(primaryPath);
-            return texture != null ? texture : Resources.Load<Texture2D>(fallbackPath);
+            UseEnvironmentFallback(EnvironmentSpriteId.WallCornerPillar, EnvironmentSpriteId.WallHorizontal);
         }
 
         private void BuildPropSprites()

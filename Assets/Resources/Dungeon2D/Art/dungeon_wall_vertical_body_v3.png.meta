@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: fbea8a6010ad4869ba7124bc77f9e572
+guid: b77258768f40458eac0ed8a23ffd643f
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 386888496701635138
-    second: dungeon_wall_vertical_raised_v2_0
+      213: 1753155069456003919
+    second: dungeon_wall_vertical_body_v3_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: dungeon_wall_vertical_raised_v2_0
+      name: dungeon_wall_vertical_body_v3_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 138
-        height: 782
+        width: 184
+        height: 956
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 75883ba83db5476f0800000000000000
-      internalID: 386888496701635138
+      spriteID: d4004eae45ff4b9a0800000000000000
+      internalID: 1753155069456003919
       vertices: []
       indices: 
       edges: []
@@ -139,7 +139,7 @@ TextureImporter:
     physicsShape: []
     bones: []
     spriteID: 
-    internalID: 386888496701635138
+    internalID: 1753155069456003919
     vertices: []
     indices: 
     edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      dungeon_wall_vertical_raised_v2_0: 386888496701635138
+      dungeon_wall_vertical_body_v3_0: 1753155069456003919
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -1,13 +1,10 @@
 fileFormatVersion: 2
-guid: df4c2461a1b0f4385a1898843ffaf058
+guid: d1e402ac15764eef9a82dd236ca2e4b2
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -5553121765732262772
-    second: dungeon_bridge_gate_open_0
-  - first:
-      213: -639059584213924064
-    second: dungeon_bridge_gate_open_1
+      213: 3723951381092708124
+    second: dungeon_wall_horizontal_body_v3_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -116,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: dungeon_bridge_gate_open_0
+      name: dungeon_wall_horizontal_body_v3_0
       rect:
         serializedVersion: 2
-        x: 11
-        y: 11
-        width: 426
-        height: 965
+        x: 0
+        y: 0
+        width: 956
+        height: 184
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -131,30 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: c8cd90ffc295fe2b0800000000000000
-      internalID: -5553121765732262772
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: dungeon_bridge_gate_open_1
-      rect:
-        serializedVersion: 2
-        x: 851
-        y: 11
-        width: 434
-        height: 965
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 027ce9ca1ba9127f0800000000000000
-      internalID: -639059584213924064
+      spriteID: cfef7e262fa8481f0800000000000000
+      internalID: 3723951381092708124
       vertices: []
       indices: 
       edges: []
@@ -164,7 +139,7 @@ TextureImporter:
     physicsShape: []
     bones: []
     spriteID: 
-    internalID: 0
+    internalID: 3723951381092708124
     vertices: []
     indices: 
     edges: []
@@ -173,8 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      dungeon_bridge_gate_open_0: -5553121765732262772
-      dungeon_bridge_gate_open_1: -639059584213924064
+      dungeon_wall_horizontal_body_v3_0: 3723951381092708124
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
