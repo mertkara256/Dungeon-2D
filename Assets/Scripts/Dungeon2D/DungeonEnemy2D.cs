@@ -30,6 +30,7 @@ namespace Dungeon2D
         private Vector2 patrolTarget;
         private Vector2 desiredVelocity;
         private bool hasPatrolTarget;
+        private bool invertFacing;
 
         public event Action<DungeonEnemy2D> Died;
 
@@ -66,6 +67,7 @@ namespace Dungeon2D
             game = owner;
             room = sourceRoom;
             kind = enemyKind;
+            invertFacing = UsesInvertedFacing(enemyKind);
             player = owner.Player != null ? owner.Player.transform : null;
 
             spriteRenderer = GetComponent<SpriteRenderer>();
@@ -167,7 +169,8 @@ namespace Dungeon2D
             if (visualAnimator != null)
             {
                 visualAnimator.IsMoving = desiredVelocity.sqrMagnitude > 0.001f;
-                visualAnimator.SetFacing(target.x - current.x);
+                float horizontalFacing = target.x - current.x;
+                visualAnimator.SetFacing(invertFacing ? -horizontalFacing : horizontalFacing);
             }
         }
 
@@ -426,6 +429,11 @@ namespace Dungeon2D
                 default:
                     return 0.9f;
             }
+        }
+
+        private static bool UsesInvertedFacing(EnemyKind enemyKind)
+        {
+            return enemyKind == EnemyKind.Melee || enemyKind == EnemyKind.Ranged;
         }
     }
 }
