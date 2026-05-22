@@ -90,13 +90,23 @@ namespace Dungeon2D
         {
             Rect bounds = room.Bounds;
             float halfDoor = Dungeon2DConfig.DoorWidth * 0.5f;
-            float halfBridgeGap = Dungeon2DConfig.BridgeWallVisualGapWidth * 0.5f;
+            float halfBridgeBodyGap = Dungeon2DConfig.BridgeWallBodyGapWidth * 0.5f;
             float cornerInset = Dungeon2DConfig.WallCornerSize * 0.5f;
             BuildWallCornerPillars(room.Root.transform, bounds);
             BuildWallVisualLine(room.Root.transform, new Vector2(bounds.xMin, bounds.yMin + cornerInset), new Vector2(bounds.xMin, bounds.yMax - cornerInset), false, 0f, false, false);
             BuildWallVisualLine(room.Root.transform, new Vector2(bounds.xMax, bounds.yMin + cornerInset), new Vector2(bounds.xMax, bounds.yMax - cornerInset), false, 0f, true, false);
-            BuildWallVisualLine(room.Root.transform, new Vector2(bounds.xMin + cornerInset, bounds.yMin), new Vector2(bounds.xMax - cornerInset, bounds.yMin), true, room.Index > 0 ? halfBridgeGap : 0f, false, true);
-            BuildWallVisualLine(room.Root.transform, new Vector2(bounds.xMin + cornerInset, bounds.yMax), new Vector2(bounds.xMax - cornerInset, bounds.yMax), true, room.Index < Dungeon2DConfig.TargetRoomCount - 1 ? halfBridgeGap : 0f, false, false);
+            BuildWallVisualLine(room.Root.transform, new Vector2(bounds.xMin + cornerInset, bounds.yMin), new Vector2(bounds.xMax - cornerInset, bounds.yMin), true, room.Index > 0 ? halfBridgeBodyGap : 0f, false, false);
+            BuildWallVisualLine(room.Root.transform, new Vector2(bounds.xMin + cornerInset, bounds.yMax), new Vector2(bounds.xMax - cornerInset, bounds.yMax), true, room.Index < Dungeon2DConfig.TargetRoomCount - 1 ? halfBridgeBodyGap : 0f, false, false);
+
+            if (room.Index > 0)
+            {
+                BuildBridgeOpeningCornerPillars(room.Root.transform, bounds.yMin);
+            }
+
+            if (room.Index < Dungeon2DConfig.TargetRoomCount - 1)
+            {
+                BuildBridgeOpeningCornerPillars(room.Root.transform, bounds.yMax);
+            }
 
             AddWallCollider(room.Root.transform, "LeftWallCollider", new Vector2(bounds.xMin - Dungeon2DConfig.RoomWallInset, room.Center.y), new Vector2(Dungeon2DConfig.RoomWallThickness, room.Size.y + Dungeon2DConfig.RoomWallPadding));
             AddWallCollider(room.Root.transform, "RightWallCollider", new Vector2(bounds.xMax + Dungeon2DConfig.RoomWallInset, room.Center.y), new Vector2(Dungeon2DConfig.RoomWallThickness, room.Size.y + Dungeon2DConfig.RoomWallPadding));
@@ -161,8 +171,8 @@ namespace Dungeon2D
 
         private void BuildWallCornerPillars(Transform parent, Rect bounds)
         {
-            BuildWallCornerPillar(parent, new Vector2(bounds.xMin, bounds.yMin), false, true);
-            BuildWallCornerPillar(parent, new Vector2(bounds.xMax, bounds.yMin), true, true);
+            BuildWallCornerPillar(parent, new Vector2(bounds.xMin, bounds.yMin), false, false);
+            BuildWallCornerPillar(parent, new Vector2(bounds.xMax, bounds.yMin), true, false);
             BuildWallCornerPillar(parent, new Vector2(bounds.xMin, bounds.yMax), false, false);
             BuildWallCornerPillar(parent, new Vector2(bounds.xMax, bounds.yMax), true, false);
         }
@@ -180,10 +190,18 @@ namespace Dungeon2D
             }
         }
 
+        private void BuildBridgeOpeningCornerPillars(Transform parent, float y)
+        {
+            float halfClearGap = Dungeon2DConfig.BridgeClearVisualGapWidth * 0.5f;
+            float halfCorner = Dungeon2DConfig.WallCornerSize * 0.5f;
+            BuildWallCornerPillar(parent, new Vector2(-halfClearGap - halfCorner, y), true, false);
+            BuildWallCornerPillar(parent, new Vector2(halfClearGap + halfCorner, y), false, false);
+        }
+
         private void BuildWallContactShadows(DungeonRoom2D room)
         {
             Rect bounds = room.Bounds;
-            float halfBridgeGap = Dungeon2DConfig.BridgeWallVisualGapWidth * 0.5f;
+            float halfBridgeGap = Dungeon2DConfig.BridgeClearVisualGapWidth * 0.5f;
 
             BuildWallContactShadowLine(room.Root.transform, new Vector2(bounds.xMin, bounds.yMin), new Vector2(bounds.xMin, bounds.yMax), false, 1f);
             BuildWallContactShadowLine(room.Root.transform, new Vector2(bounds.xMax, bounds.yMin), new Vector2(bounds.xMax, bounds.yMax), false, -1f);

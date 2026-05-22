@@ -33,9 +33,10 @@ namespace Dungeon2D
         public const float DoorVisualWidth = 1.55f;
         public const float BridgeVisualWidth = 4.75f;
         public const float BridgeVisualOverlap = 1.25f;
-        public const float BridgeWallVisualGapWidth = 5.15f;
         public const float BridgeDoorClosedVisualWidth = 4.75f;
         public const float BridgeDoorOpenVisualWidth = 4.95f;
+        public const float BridgeClearVisualGapWidth = BridgeDoorOpenVisualWidth;
+        public const float BridgeWallBodyGapWidth = BridgeClearVisualGapWidth + WallCornerSize * 2f;
         public const float CorridorWallVisualInset = 0.45f;
 
         public const int InteractionHitCapacity = 24;
