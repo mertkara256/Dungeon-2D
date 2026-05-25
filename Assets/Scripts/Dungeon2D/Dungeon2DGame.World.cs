@@ -93,6 +93,7 @@ namespace Dungeon2D
             float halfBridgeBodyGap = Dungeon2DConfig.BridgeWallBodyGapWidth * 0.5f;
             float cornerInset = Dungeon2DConfig.WallCornerSize * 0.5f;
             BuildWallCornerPillars(room.Root.transform, bounds);
+            BuildTopWallCornerConnectors(room.Root.transform, bounds);
             BuildWallVisualLine(room.Root.transform, new Vector2(bounds.xMin, bounds.yMin + cornerInset), new Vector2(bounds.xMin, bounds.yMax - cornerInset), false, 0f, false, false);
             BuildWallVisualLine(room.Root.transform, new Vector2(bounds.xMax, bounds.yMin + cornerInset), new Vector2(bounds.xMax, bounds.yMax - cornerInset), false, 0f, true, false);
             BuildWallVisualLine(room.Root.transform, new Vector2(bounds.xMin + cornerInset, bounds.yMin), new Vector2(bounds.xMax - cornerInset, bounds.yMin), true, room.Index > 0 ? halfBridgeBodyGap : 0f, false, false);
@@ -187,6 +188,26 @@ namespace Dungeon2D
             {
                 renderer.flipX = flipX;
                 renderer.flipY = flipY;
+            }
+        }
+
+        private void BuildTopWallCornerConnectors(Transform parent, Rect bounds)
+        {
+            float connectorHeight = Dungeon2DConfig.WallCornerSize * 0.5f;
+            float centerY = bounds.yMax - connectorHeight * 0.5f;
+            BuildTopWallCornerConnector(parent, new Vector2(bounds.xMin, centerY), false);
+            BuildTopWallCornerConnector(parent, new Vector2(bounds.xMax, centerY), true);
+        }
+
+        private void BuildTopWallCornerConnector(Transform parent, Vector2 position, bool flipX)
+        {
+            GameObject connector = CreateSpriteObject("TopWallCornerConnector", Art.GetEnvironmentSprite(EnvironmentSpriteId.WallVerticalCornerConnector), parent, position, 8);
+            ScaleSpriteToWorldSize(connector, new Vector2(Dungeon2DConfig.WallVisualThickness, Dungeon2DConfig.WallCornerSize * 0.5f));
+
+            SpriteRenderer renderer = connector.GetComponent<SpriteRenderer>();
+            if (renderer != null)
+            {
+                renderer.flipX = flipX;
             }
         }
 

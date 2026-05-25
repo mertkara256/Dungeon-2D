@@ -81,6 +81,7 @@ namespace Dungeon2D
         BridgeDoorOpen,
         WallHorizontal,
         WallVertical,
+        WallVerticalCornerConnector,
         WallShadowHorizontal,
         WallShadowVertical,
         WallCornerPillar

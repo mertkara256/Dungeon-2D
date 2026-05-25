@@ -188,6 +188,7 @@ namespace Dungeon2D
             AddStandaloneEnvironment(EnvironmentSpriteId.BridgeDoorOpen, bridgeDoorOpenTexture, EnvironmentPixelsPerUnit);
             AddStandaloneEnvironment(EnvironmentSpriteId.WallHorizontal, wallHorizontalTexture, EnvironmentPixelsPerUnit);
             AddStandaloneEnvironment(EnvironmentSpriteId.WallVertical, wallVerticalTexture, EnvironmentPixelsPerUnit);
+            AddStandaloneEnvironmentSlice(EnvironmentSpriteId.WallVerticalCornerConnector, wallVerticalTexture, 0.5f, EnvironmentPixelsPerUnit);
             AddStandaloneEnvironment(EnvironmentSpriteId.WallShadowHorizontal, wallShadowHorizontalTexture, EnvironmentPixelsPerUnit);
             AddStandaloneEnvironment(EnvironmentSpriteId.WallShadowVertical, wallShadowVerticalTexture, EnvironmentPixelsPerUnit);
             AddStandaloneEnvironment(EnvironmentSpriteId.WallCornerPillar, wallCornerPillarTexture, EnvironmentPixelsPerUnit);
@@ -198,6 +199,7 @@ namespace Dungeon2D
             UseEnvironmentFallback(EnvironmentSpriteId.BridgeDoorOpen, EnvironmentSpriteId.Archway);
             UseEnvironmentFallback(EnvironmentSpriteId.WallHorizontal, EnvironmentSpriteId.Wall);
             UseEnvironmentFallback(EnvironmentSpriteId.WallVertical, EnvironmentSpriteId.Wall);
+            UseEnvironmentFallback(EnvironmentSpriteId.WallVerticalCornerConnector, EnvironmentSpriteId.WallVertical);
             UseEnvironmentFallback(EnvironmentSpriteId.WallCornerPillar, EnvironmentSpriteId.WallHorizontal);
         }
 
@@ -263,6 +265,18 @@ namespace Dungeon2D
             }
 
             Rect rect = new Rect(0f, 0f, texture.width, texture.height);
+            environmentSprites[id] = Sprite.Create(texture, rect, new Vector2(0.5f, 0.5f), pixelsPerUnit, 0, SpriteMeshType.FullRect);
+        }
+
+        private void AddStandaloneEnvironmentSlice(EnvironmentSpriteId id, Texture2D texture, float heightRatio, float pixelsPerUnit)
+        {
+            if (texture == null)
+            {
+                return;
+            }
+
+            float height = Mathf.Max(1f, texture.width * heightRatio);
+            Rect rect = new Rect(0f, 0f, texture.width, Mathf.Min(texture.height, height));
             environmentSprites[id] = Sprite.Create(texture, rect, new Vector2(0.5f, 0.5f), pixelsPerUnit, 0, SpriteMeshType.FullRect);
         }
 
