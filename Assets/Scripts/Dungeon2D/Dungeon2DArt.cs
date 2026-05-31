@@ -13,8 +13,8 @@ namespace Dungeon2D
         private const int AnimationRows = 8;
         private const int AnimationFramesPerState = 4;
         private const int SlashAnimationFrameWidth = 192;
+        private const int HeroMeleeAttackFrameWidth = 384;
         private const float SlashPixelsPerUnit = 128f;
-        private const float HeldSwordPixelsPerUnit = 128f;
 
         private readonly Dictionary<EnvironmentSpriteId, Sprite> environmentSprites = new Dictionary<EnvironmentSpriteId, Sprite>();
         private readonly Dictionary<CharacterSpriteId, Sprite> characterSprites = new Dictionary<CharacterSpriteId, Sprite>();
@@ -39,11 +39,9 @@ namespace Dungeon2D
         private Texture2D projectileTexture;
         private Texture2D slashTexture;
         private Texture2D slashAnimationTexture;
-        private Texture2D heroMeleeBaseTexture;
-        private Texture2D heldSwordTexture;
+        private Texture2D heroMeleeAttackTexture;
         private Sprite projectileSprite;
         private Sprite slashSprite;
-        private Sprite heldSwordSprite;
         private Sprite[] slashAnimationFrames;
         private Sprite fallbackSprite;
 
@@ -108,12 +106,6 @@ namespace Dungeon2D
             return slashAnimationFrames;
         }
 
-        public Sprite GetHeldSwordSprite()
-        {
-            EnsureLoaded();
-            return heldSwordSprite;
-        }
-
         public void Apply(SpriteRenderer renderer, EnvironmentSpriteId id, int order)
         {
             if (renderer == null)
@@ -163,8 +155,7 @@ namespace Dungeon2D
             projectileTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_projectile_sprite");
             slashTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_slash_sprite");
             slashAnimationTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_slash_animation");
-            heroMeleeBaseTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_hero_melee_base");
-            heldSwordTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_held_sword");
+            heroMeleeAttackTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_hero_melee_attack");
 
             if (environmentAtlas != null)
             {
@@ -196,11 +187,6 @@ namespace Dungeon2D
             if (slashAnimationTexture != null)
             {
                 BuildSlashAnimationFrames();
-            }
-
-            if (heldSwordTexture != null)
-            {
-                heldSwordSprite = Sprite.Create(heldSwordTexture, new Rect(0f, 0f, heldSwordTexture.width, heldSwordTexture.height), new Vector2(0.14f, 0.5f), HeldSwordPixelsPerUnit, 0, SpriteMeshType.FullRect);
             }
         }
 
@@ -289,9 +275,9 @@ namespace Dungeon2D
                 BuildFallbackCharacterAnimations();
             }
 
-            if (heroMeleeBaseTexture != null)
+            if (heroMeleeAttackTexture != null)
             {
-                BuildHeroMeleeBaseAnimation();
+                BuildHeroMeleeAttackAnimation();
             }
         }
 
@@ -310,15 +296,21 @@ namespace Dungeon2D
             }
         }
 
-        private void BuildHeroMeleeBaseAnimation()
+        private void BuildHeroMeleeAttackAnimation()
         {
-            characterAnimations[AnimationKey(CharacterSpriteId.Hero, DungeonSpriteAnimation.SecondaryAttack)] = BuildStandaloneFrames(heroMeleeBaseTexture, new[]
+            int frameWidth = heroMeleeAttackTexture.width >= HeroMeleeAttackFrameWidth && heroMeleeAttackTexture.width % HeroMeleeAttackFrameWidth == 0
+                ? HeroMeleeAttackFrameWidth
+                : heroMeleeAttackTexture.width;
+            int frameCount = Mathf.Max(1, heroMeleeAttackTexture.width / Mathf.Max(1, frameWidth));
+            Sprite[] frames = new Sprite[frameCount];
+
+            for (int i = 0; i < frameCount; i++)
             {
-                new Vector2(0.5f, 0.5f),
-                new Vector2(0.518f, 0.492f),
-                new Vector2(0.535f, 0.486f),
-                new Vector2(0.51f, 0.498f)
-            }, CharacterPixelsPerUnit);
+                Rect rect = new Rect(i * frameWidth, 0f, frameWidth, heroMeleeAttackTexture.height);
+                frames[i] = Sprite.Create(heroMeleeAttackTexture, rect, new Vector2(0.5f, 0.5f), CharacterPixelsPerUnit, 0, SpriteMeshType.FullRect);
+            }
+
+            characterAnimations[AnimationKey(CharacterSpriteId.Hero, DungeonSpriteAnimation.SecondaryAttack)] = frames;
         }
 
         private void AddEnvironment(EnvironmentSpriteId id, int column, int rowFromBottom)
@@ -502,18 +494,6 @@ namespace Dungeon2D
             for (int i = 0; i < pivots.Length; i++)
             {
                 frames[i] = Sprite.Create(characterSheet, rect, pivots[i], CharacterPixelsPerUnit, 0, SpriteMeshType.FullRect);
-            }
-
-            return frames;
-        }
-
-        private static Sprite[] BuildStandaloneFrames(Texture2D texture, Vector2[] pivots, float pixelsPerUnit)
-        {
-            Sprite[] frames = new Sprite[pivots.Length];
-            Rect rect = new Rect(0f, 0f, texture.width, texture.height);
-            for (int i = 0; i < pivots.Length; i++)
-            {
-                frames[i] = Sprite.Create(texture, rect, pivots[i], pixelsPerUnit, 0, SpriteMeshType.FullRect);
             }
 
             return frames;

@@ -90,7 +90,6 @@ namespace Dungeon2D
                 art.GetCharacterAnimation(CharacterSpriteId.Hero, DungeonSpriteAnimation.PrimaryAttack),
                 art.GetCharacterAnimation(CharacterSpriteId.Hero, DungeonSpriteAnimation.SecondaryAttack));
             visualAnimator.SetBaseVisualScale(Dungeon2DConfig.CharacterVisualScale);
-            visualAnimator.ConfigureMeleeWeapon(art.GetHeldSwordSprite());
             spriteRenderer = visualAnimator.Renderer;
 
             healthBar = GetComponent<Dungeon2DWorldHealthBar>();

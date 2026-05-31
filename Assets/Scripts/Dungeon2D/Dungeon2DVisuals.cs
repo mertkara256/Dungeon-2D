@@ -137,6 +137,7 @@ namespace Dungeon2D
             }
 
             activeAttackDirection = attackDirection.sqrMagnitude > 0.001f ? attackDirection.normalized : (targetRenderer != null && targetRenderer.flipX ? Vector2.left : Vector2.right);
+            SetFacing(activeAttackDirection.x);
             if (attackRoutine != null)
             {
                 StopCoroutine(attackRoutine);
