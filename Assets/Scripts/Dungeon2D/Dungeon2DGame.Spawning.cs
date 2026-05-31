@@ -271,12 +271,26 @@ namespace Dungeon2D
 
         private void SpawnSlashEffect(Vector2 center, Vector2 direction)
         {
-            GameObject slash = CreateSpriteObject("SwordSlash", Art.GetSlashSprite(), worldRoot, center, 30);
-            slash.transform.localScale = Vector3.one * 1.25f;
-            slash.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 35f);
+            if (worldRoot == null || Art == null)
+            {
+                return;
+            }
+
+            bool faceLeft = direction.x < -0.01f;
+            Sprite[] frames = Art.GetSlashAnimationFrames();
+            Sprite firstFrame = frames != null && frames.Length > 0 ? frames[0] : Art.GetSlashSprite();
+            if (firstFrame == null)
+            {
+                return;
+            }
+
+            GameObject slash = CreateSpriteObject("SwordSlash", firstFrame, worldRoot, center, 30);
+            slash.transform.localScale = Vector3.one * 1.32f;
+            slash.transform.rotation = Quaternion.identity;
             SpriteRenderer renderer = slash.GetComponent<SpriteRenderer>();
-            renderer.color = new Color(1f, 0.92f, 0.72f, 0.9f);
-            slash.AddComponent<Dungeon2DSlashEffect>();
+            renderer.color = Color.white;
+            renderer.flipX = faceLeft;
+            slash.AddComponent<Dungeon2DSlashEffect>().Configure(frames);
         }
 
         private void SpawnDashRuneMotes(Vector2 position, Vector2 direction)

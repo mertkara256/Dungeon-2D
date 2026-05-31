@@ -90,6 +90,7 @@ namespace Dungeon2D
                 art.GetCharacterAnimation(CharacterSpriteId.Hero, DungeonSpriteAnimation.PrimaryAttack),
                 art.GetCharacterAnimation(CharacterSpriteId.Hero, DungeonSpriteAnimation.SecondaryAttack));
             visualAnimator.SetBaseVisualScale(Dungeon2DConfig.CharacterVisualScale);
+            visualAnimator.ConfigureMeleeWeapon(art.GetHeldSwordSprite());
             spriteRenderer = visualAnimator.Renderer;
 
             healthBar = GetComponent<Dungeon2DWorldHealthBar>();
@@ -359,7 +360,7 @@ namespace Dungeon2D
             nextMeleeAt = Time.time + MeleeCooldown;
             if (visualAnimator != null)
             {
-                visualAnimator.PlayAttack(DungeonSpriteAnimation.SecondaryAttack);
+                visualAnimator.PlayAttack(DungeonSpriteAnimation.SecondaryAttack, aimDirection);
             }
 
             game.PerformPlayerMelee(transform.position, aimDirection, game.PlayerStats.Damage * 1.3f);

@@ -6,17 +6,21 @@ namespace Dungeon2D
     public sealed class Dungeon2DVisualAnimator : MonoBehaviour
     {
         [SerializeField] private SpriteRenderer targetRenderer;
+        [SerializeField] private SpriteRenderer meleeWeaponRenderer;
         [SerializeField] private float frameRate = 9f;
+        [SerializeField] private float meleeWeaponScale = 0.68f;
         [SerializeField] private Color damageFlashColor = new Color(1f, 0.12f, 0.08f, 1f);
         [SerializeField] private float damageFlashDuration = 0.14f;
         [SerializeField] private float damageShakeDistance = 0.08f;
         [SerializeField] private float damageShakeFrequency = 34f;
 
         private Transform visualTransform;
+        private Transform meleeWeaponTransform;
         private Vector3 baseLocalPosition;
         private Vector3 baseLocalScale;
         private Vector3 loopMotionOffset;
         private Vector3 hitShakeOffset;
+        private Vector2 activeAttackDirection = Vector2.right;
         private Color baseColor = Color.white;
         private Sprite[] idleFrames;
         private Sprite[] walkFrames;
@@ -68,6 +72,7 @@ namespace Dungeon2D
             secondaryAttackFrames = secondaryAttack;
             CaptureBasePose();
             ApplyFrame(GetActiveLoopFrames(), 0);
+            RefreshMeleeWeaponSorting();
         }
 
         private void CaptureBasePose()
@@ -120,17 +125,40 @@ namespace Dungeon2D
 
         public void PlayAttack(DungeonSpriteAnimation attackAnimation = DungeonSpriteAnimation.PrimaryAttack)
         {
+            Vector2 facingDirection = targetRenderer != null && targetRenderer.flipX ? Vector2.left : Vector2.right;
+            PlayAttack(attackAnimation, facingDirection);
+        }
+
+        public void PlayAttack(DungeonSpriteAnimation attackAnimation, Vector2 attackDirection)
+        {
             if (IsDead)
             {
                 return;
             }
 
+            activeAttackDirection = attackDirection.sqrMagnitude > 0.001f ? attackDirection.normalized : (targetRenderer != null && targetRenderer.flipX ? Vector2.left : Vector2.right);
             if (attackRoutine != null)
             {
                 StopCoroutine(attackRoutine);
+                HideMeleeWeapon();
             }
 
             attackRoutine = StartCoroutine(AttackRoutine(attackAnimation));
+        }
+
+        public void ConfigureMeleeWeapon(Sprite weaponSprite)
+        {
+            if (weaponSprite == null)
+            {
+                HideMeleeWeapon();
+                return;
+            }
+
+            EnsureMeleeWeaponChild();
+            meleeWeaponRenderer.sprite = weaponSprite;
+            meleeWeaponRenderer.color = Color.white;
+            meleeWeaponRenderer.enabled = false;
+            RefreshMeleeWeaponSorting();
         }
 
         public void SetBaseVisualScale(float scale)
@@ -180,6 +208,7 @@ namespace Dungeon2D
 
             hitShakeOffset = Vector3.zero;
             ApplyVisualPosition();
+            HideMeleeWeapon();
 
             if (deathRoutine != null)
             {
@@ -200,12 +229,42 @@ namespace Dungeon2D
             }
 
             float secondsPerFrame = 1f / Mathf.Max(1f, frameRate * 1.7f);
-            for (int i = 0; i < frames.Length; i++)
+            float totalDuration = secondsPerFrame * frames.Length;
+            float timer = 0f;
+            int appliedFrame = -1;
+            bool swingMeleeWeapon = attackAnimation == DungeonSpriteAnimation.SecondaryAttack && meleeWeaponRenderer != null && meleeWeaponRenderer.sprite != null;
+
+            if (swingMeleeWeapon)
             {
-                ApplyFrame(frames, i);
-                float punch = Mathf.Sin((i + 1f) / frames.Length * Mathf.PI) * 0.16f;
+                meleeWeaponRenderer.enabled = true;
+                UpdateMeleeWeaponPose(0f);
+            }
+
+            while (timer < totalDuration)
+            {
+                float t = Mathf.Clamp01(timer / totalDuration);
+                int frame = Mathf.Min(frames.Length - 1, Mathf.FloorToInt(timer / secondsPerFrame));
+                if (frame != appliedFrame)
+                {
+                    ApplyFrame(frames, frame);
+                    appliedFrame = frame;
+                }
+
+                float punch = Mathf.Sin(t * Mathf.PI) * 0.16f;
                 visualTransform.localScale = new Vector3(baseLocalScale.x * (1f + punch), baseLocalScale.y * (1f - punch * 0.25f), baseLocalScale.z);
-                yield return new WaitForSeconds(secondsPerFrame);
+                if (swingMeleeWeapon)
+                {
+                    UpdateMeleeWeaponPose(t);
+                }
+
+                timer += Time.deltaTime;
+                yield return null;
+            }
+
+            if (swingMeleeWeapon)
+            {
+                UpdateMeleeWeaponPose(1f);
+                HideMeleeWeapon();
             }
 
             visualTransform.localScale = baseLocalScale;
@@ -365,6 +424,71 @@ namespace Dungeon2D
             targetRenderer = childRenderer;
         }
 
+        private void EnsureMeleeWeaponChild()
+        {
+            if (meleeWeaponRenderer != null)
+            {
+                meleeWeaponTransform = meleeWeaponRenderer.transform;
+                Transform desiredParent = visualTransform != null ? visualTransform : transform;
+                if (meleeWeaponTransform.parent != desiredParent)
+                {
+                    meleeWeaponTransform.SetParent(desiredParent, false);
+                }
+
+                return;
+            }
+
+            GameObject weaponObject = new GameObject("MeleeSwordVisual");
+            weaponObject.transform.SetParent(visualTransform != null ? visualTransform : transform, false);
+            meleeWeaponTransform = weaponObject.transform;
+            meleeWeaponRenderer = weaponObject.AddComponent<SpriteRenderer>();
+            meleeWeaponRenderer.enabled = false;
+        }
+
+        private void RefreshMeleeWeaponSorting()
+        {
+            if (meleeWeaponRenderer == null || targetRenderer == null)
+            {
+                return;
+            }
+
+            meleeWeaponRenderer.sortingLayerID = targetRenderer.sortingLayerID;
+            meleeWeaponRenderer.sortingOrder = targetRenderer.sortingOrder + 2;
+        }
+
+        private void UpdateMeleeWeaponPose(float normalizedTime)
+        {
+            if (meleeWeaponTransform == null)
+            {
+                return;
+            }
+
+            Vector2 direction = activeAttackDirection.sqrMagnitude > 0.001f ? activeAttackDirection.normalized : Vector2.right;
+            float facingSign = Mathf.Abs(direction.x) > 0.08f
+                ? Mathf.Sign(direction.x)
+                : (targetRenderer != null && targetRenderer.flipX ? -1f : 1f);
+            float swing = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((normalizedTime - 0.04f) / 0.78f));
+            float recover = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((normalizedTime - 0.72f) / 0.28f));
+            float sweepAngle = Mathf.Lerp(58f * facingSign, -78f * facingSign, swing) + recover * 18f * facingSign;
+            float directionAngle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+            Vector2 handAnchor = new Vector2(-0.32f * facingSign, -0.31f);
+            Vector2 gripFollow = direction * Mathf.Lerp(0.01f, 0.04f, swing) + Vector2.up * Mathf.Lerp(0.015f, -0.015f, swing);
+            float pulse = Mathf.Sin(normalizedTime * Mathf.PI) * 0.06f;
+
+            meleeWeaponRenderer.flipY = facingSign < 0f;
+            meleeWeaponTransform.localPosition = handAnchor + gripFollow;
+            meleeWeaponTransform.localRotation = Quaternion.Euler(0f, 0f, directionAngle + sweepAngle);
+            meleeWeaponTransform.localScale = Vector3.one * (meleeWeaponScale + pulse);
+        }
+
+        private void HideMeleeWeapon()
+        {
+            if (meleeWeaponRenderer != null)
+            {
+                meleeWeaponRenderer.enabled = false;
+            }
+        }
+
         private static void CopyRenderer(SpriteRenderer source, SpriteRenderer target)
         {
             target.sprite = source.sprite;
@@ -384,11 +508,15 @@ namespace Dungeon2D
     public sealed class Dungeon2DSlashEffect : MonoBehaviour
     {
         [SerializeField] private SpriteRenderer spriteRenderer;
-        [SerializeField] private float duration = 0.16f;
+        [SerializeField] private float duration = 0.22f;
+        [SerializeField] private float forwardDrift = 0.16f;
 
+        private Sprite[] frames;
         private float timer;
         private Vector3 initialScale;
+        private Vector3 initialPosition;
         private Color initialColor;
+        private int lastFrameIndex = -1;
 
         private void Awake()
         {
@@ -397,14 +525,34 @@ namespace Dungeon2D
                 spriteRenderer = GetComponent<SpriteRenderer>();
             }
 
-            initialScale = transform.localScale;
-            initialColor = spriteRenderer != null ? spriteRenderer.color : Color.white;
+            CaptureInitialState();
+        }
+
+        public void Configure(Sprite[] animationFrames)
+        {
+            if (animationFrames != null && animationFrames.Length > 0)
+            {
+                frames = animationFrames;
+                duration = Mathf.Clamp(frames.Length * 0.036f, 0.14f, 0.28f);
+            }
+
+            timer = 0f;
+            lastFrameIndex = -1;
+            CaptureInitialState();
+            ApplyAnimationFrame(0f);
         }
 
         private void OnEnable()
         {
             timer = 0f;
+            lastFrameIndex = -1;
+            CaptureInitialState();
+        }
+
+        private void CaptureInitialState()
+        {
             initialScale = transform.localScale;
+            initialPosition = transform.position;
             if (spriteRenderer != null)
             {
                 initialColor = spriteRenderer.color;
@@ -415,12 +563,18 @@ namespace Dungeon2D
         {
             timer += Time.deltaTime;
             float t = Mathf.Clamp01(timer / Mathf.Max(0.01f, duration));
-            transform.localScale = Vector3.Lerp(initialScale * 0.75f, initialScale * 1.25f, Mathf.Sin(t * Mathf.PI));
+            ApplyAnimationFrame(t);
+
+            float pulse = Mathf.Sin(t * Mathf.PI) * 0.08f;
+            float sweepScale = Mathf.Lerp(0.94f, 1.08f, Mathf.SmoothStep(0f, 1f, t)) + pulse;
+            transform.localScale = initialScale * sweepScale;
+            transform.position = initialPosition + transform.right * Mathf.Lerp(0f, forwardDrift, t);
 
             if (spriteRenderer != null)
             {
                 Color color = initialColor;
-                color.a = Mathf.Lerp(initialColor.a, 0f, t);
+                float fade = t < 0.62f ? 1f : 1f - Mathf.SmoothStep(0f, 1f, (t - 0.62f) / 0.38f);
+                color.a = initialColor.a * fade;
                 spriteRenderer.color = color;
             }
 
@@ -428,6 +582,23 @@ namespace Dungeon2D
             {
                 Destroy(gameObject);
             }
+        }
+
+        private void ApplyAnimationFrame(float normalizedTime)
+        {
+            if (spriteRenderer == null || frames == null || frames.Length == 0)
+            {
+                return;
+            }
+
+            int frameIndex = Mathf.Min(frames.Length - 1, Mathf.FloorToInt(normalizedTime * frames.Length));
+            if (frameIndex == lastFrameIndex || frames[frameIndex] == null)
+            {
+                return;
+            }
+
+            spriteRenderer.sprite = frames[frameIndex];
+            lastFrameIndex = frameIndex;
         }
     }
 

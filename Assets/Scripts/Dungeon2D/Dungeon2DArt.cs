@@ -12,6 +12,9 @@ namespace Dungeon2D
         private const int AnimationColumns = 16;
         private const int AnimationRows = 8;
         private const int AnimationFramesPerState = 4;
+        private const int SlashAnimationFrameWidth = 192;
+        private const float SlashPixelsPerUnit = 128f;
+        private const float HeldSwordPixelsPerUnit = 128f;
 
         private readonly Dictionary<EnvironmentSpriteId, Sprite> environmentSprites = new Dictionary<EnvironmentSpriteId, Sprite>();
         private readonly Dictionary<CharacterSpriteId, Sprite> characterSprites = new Dictionary<CharacterSpriteId, Sprite>();
@@ -28,12 +31,20 @@ namespace Dungeon2D
         private Texture2D wallShadowHorizontalTexture;
         private Texture2D wallShadowVerticalTexture;
         private Texture2D wallCornerPillarTexture;
+        private Texture2D chestClosedTexture;
+        private Texture2D upgradeStationTexture;
+        private Texture2D upgradeStationSpentTexture;
         private Texture2D characterSheet;
         private Texture2D animationSheet;
         private Texture2D projectileTexture;
         private Texture2D slashTexture;
+        private Texture2D slashAnimationTexture;
+        private Texture2D heroMeleeBaseTexture;
+        private Texture2D heldSwordTexture;
         private Sprite projectileSprite;
         private Sprite slashSprite;
+        private Sprite heldSwordSprite;
+        private Sprite[] slashAnimationFrames;
         private Sprite fallbackSprite;
 
         public Sprite GetEnvironmentSprite(EnvironmentSpriteId id)
@@ -84,6 +95,25 @@ namespace Dungeon2D
             return slashSprite != null ? slashSprite : GetEnvironmentSprite(EnvironmentSpriteId.Slash);
         }
 
+        public Sprite[] GetSlashAnimationFrames()
+        {
+            EnsureLoaded();
+            if (slashAnimationFrames != null && slashAnimationFrames.Length > 0)
+            {
+                return slashAnimationFrames;
+            }
+
+            Sprite sprite = GetSlashSprite();
+            slashAnimationFrames = sprite != null ? new[] { sprite } : new[] { fallbackSprite };
+            return slashAnimationFrames;
+        }
+
+        public Sprite GetHeldSwordSprite()
+        {
+            EnsureLoaded();
+            return heldSwordSprite;
+        }
+
         public void Apply(SpriteRenderer renderer, EnvironmentSpriteId id, int order)
         {
             if (renderer == null)
@@ -125,10 +155,16 @@ namespace Dungeon2D
             wallShadowHorizontalTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_wall_shadow_horizontal_v2");
             wallShadowVerticalTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_wall_shadow_vertical_v2");
             wallCornerPillarTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_wall_corner_pillar_v3");
+            chestClosedTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_chest_closed_v2");
+            upgradeStationTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_upgrade_station_v2");
+            upgradeStationSpentTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_upgrade_station_spent_v2");
             characterSheet = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_character_sheet");
             animationSheet = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_animation_sheet");
             projectileTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_projectile_sprite");
             slashTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_slash_sprite");
+            slashAnimationTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_slash_animation");
+            heroMeleeBaseTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_hero_melee_base");
+            heldSwordTexture = Resources.Load<Texture2D>("Dungeon2D/Art/dungeon_held_sword");
 
             if (environmentAtlas != null)
             {
@@ -154,7 +190,17 @@ namespace Dungeon2D
 
             if (slashTexture != null)
             {
-                slashSprite = Sprite.Create(slashTexture, new Rect(0f, 0f, slashTexture.width, slashTexture.height), new Vector2(0.5f, 0.5f), 128f, 0, SpriteMeshType.FullRect);
+                slashSprite = Sprite.Create(slashTexture, new Rect(0f, 0f, slashTexture.width, slashTexture.height), new Vector2(0.5f, 0.5f), SlashPixelsPerUnit, 0, SpriteMeshType.FullRect);
+            }
+
+            if (slashAnimationTexture != null)
+            {
+                BuildSlashAnimationFrames();
+            }
+
+            if (heldSwordTexture != null)
+            {
+                heldSwordSprite = Sprite.Create(heldSwordTexture, new Rect(0f, 0f, heldSwordTexture.width, heldSwordTexture.height), new Vector2(0.14f, 0.5f), HeldSwordPixelsPerUnit, 0, SpriteMeshType.FullRect);
             }
         }
 
@@ -192,6 +238,9 @@ namespace Dungeon2D
             AddStandaloneEnvironment(EnvironmentSpriteId.WallShadowHorizontal, wallShadowHorizontalTexture, EnvironmentPixelsPerUnit);
             AddStandaloneEnvironment(EnvironmentSpriteId.WallShadowVertical, wallShadowVerticalTexture, EnvironmentPixelsPerUnit);
             AddStandaloneEnvironment(EnvironmentSpriteId.WallCornerPillar, wallCornerPillarTexture, EnvironmentPixelsPerUnit);
+            AddStandaloneEnvironment(EnvironmentSpriteId.Chest, chestClosedTexture, PropPixelsPerUnit);
+            AddStandaloneEnvironment(EnvironmentSpriteId.Altar, upgradeStationTexture, PropPixelsPerUnit);
+            AddStandaloneEnvironment(EnvironmentSpriteId.AltarSpent, upgradeStationSpentTexture, PropPixelsPerUnit);
 
             UseEnvironmentFallback(EnvironmentSpriteId.RoomFloor, EnvironmentSpriteId.Floor);
             UseEnvironmentFallback(EnvironmentSpriteId.WoodenBridge, EnvironmentSpriteId.CrackedFloor);
@@ -239,6 +288,37 @@ namespace Dungeon2D
             {
                 BuildFallbackCharacterAnimations();
             }
+
+            if (heroMeleeBaseTexture != null)
+            {
+                BuildHeroMeleeBaseAnimation();
+            }
+        }
+
+        private void BuildSlashAnimationFrames()
+        {
+            int frameWidth = slashAnimationTexture.width >= SlashAnimationFrameWidth && slashAnimationTexture.width % SlashAnimationFrameWidth == 0
+                ? SlashAnimationFrameWidth
+                : slashAnimationTexture.width;
+            int frameCount = Mathf.Max(1, slashAnimationTexture.width / Mathf.Max(1, frameWidth));
+            slashAnimationFrames = new Sprite[frameCount];
+
+            for (int i = 0; i < frameCount; i++)
+            {
+                Rect rect = new Rect(i * frameWidth, 0f, frameWidth, slashAnimationTexture.height);
+                slashAnimationFrames[i] = Sprite.Create(slashAnimationTexture, rect, new Vector2(0.5f, 0.5f), SlashPixelsPerUnit, 0, SpriteMeshType.FullRect);
+            }
+        }
+
+        private void BuildHeroMeleeBaseAnimation()
+        {
+            characterAnimations[AnimationKey(CharacterSpriteId.Hero, DungeonSpriteAnimation.SecondaryAttack)] = BuildStandaloneFrames(heroMeleeBaseTexture, new[]
+            {
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0.518f, 0.492f),
+                new Vector2(0.535f, 0.486f),
+                new Vector2(0.51f, 0.498f)
+            }, CharacterPixelsPerUnit);
         }
 
         private void AddEnvironment(EnvironmentSpriteId id, int column, int rowFromBottom)
@@ -422,6 +502,18 @@ namespace Dungeon2D
             for (int i = 0; i < pivots.Length; i++)
             {
                 frames[i] = Sprite.Create(characterSheet, rect, pivots[i], CharacterPixelsPerUnit, 0, SpriteMeshType.FullRect);
+            }
+
+            return frames;
+        }
+
+        private static Sprite[] BuildStandaloneFrames(Texture2D texture, Vector2[] pivots, float pixelsPerUnit)
+        {
+            Sprite[] frames = new Sprite[pivots.Length];
+            Rect rect = new Rect(0f, 0f, texture.width, texture.height);
+            for (int i = 0; i < pivots.Length; i++)
+            {
+                frames[i] = Sprite.Create(texture, rect, pivots[i], pixelsPerUnit, 0, SpriteMeshType.FullRect);
             }
 
             return frames;
