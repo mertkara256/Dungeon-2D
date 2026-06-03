@@ -351,7 +351,7 @@ namespace Dungeon2D
             if (spriteRenderer != null && game != null)
             {
                 spriteRenderer.sprite = game.Art.GetEnvironmentSprite(EnvironmentSpriteId.AltarSpent);
-                spriteRenderer.color = new Color(0.74f, 0.72f, 0.68f, 1f);
+                spriteRenderer.color = Color.white;
             }
         }
     }
