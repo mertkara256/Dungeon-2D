@@ -509,15 +509,14 @@ namespace Dungeon2D
     public sealed class Dungeon2DSlashEffect : MonoBehaviour
     {
         [SerializeField] private SpriteRenderer spriteRenderer;
-        [SerializeField] private float duration = 0.22f;
-        [SerializeField] private float forwardDrift = 0.16f;
+        [SerializeField] private float duration = 0.16f;
+        [SerializeField] private float forwardDrift = 0.36f;
 
-        private Sprite[] frames;
         private float timer;
         private Vector3 initialScale;
         private Vector3 initialPosition;
         private Color initialColor;
-        private int lastFrameIndex = -1;
+        private Vector2 direction = Vector2.right;
 
         private void Awake()
         {
@@ -529,24 +528,18 @@ namespace Dungeon2D
             CaptureInitialState();
         }
 
-        public void Configure(Sprite[] animationFrames)
+        public void Configure(Vector2 attackDirection, float lifeTime, float drift)
         {
-            if (animationFrames != null && animationFrames.Length > 0)
-            {
-                frames = animationFrames;
-                duration = Mathf.Clamp(frames.Length * 0.036f, 0.14f, 0.28f);
-            }
-
+            direction = attackDirection.sqrMagnitude > 0.001f ? attackDirection.normalized : Vector2.right;
+            duration = Mathf.Max(0.05f, lifeTime);
+            forwardDrift = Mathf.Max(0f, drift);
             timer = 0f;
-            lastFrameIndex = -1;
             CaptureInitialState();
-            ApplyAnimationFrame(0f);
         }
 
         private void OnEnable()
         {
             timer = 0f;
-            lastFrameIndex = -1;
             CaptureInitialState();
         }
 
@@ -564,18 +557,23 @@ namespace Dungeon2D
         {
             timer += Time.deltaTime;
             float t = Mathf.Clamp01(timer / Mathf.Max(0.01f, duration));
-            ApplyAnimationFrame(t);
+            float extend = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / 0.42f));
+            float vanish = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - 0.56f) / 0.44f));
+            float widthScale = Mathf.Lerp(0.48f, 1.08f, extend) * Mathf.Lerp(1f, 0.36f, vanish);
+            float lengthScale = Mathf.Lerp(0.24f, 1.18f, extend) * Mathf.Lerp(1f, 0.72f, vanish);
 
-            float pulse = Mathf.Sin(t * Mathf.PI) * 0.08f;
-            float sweepScale = Mathf.Lerp(0.94f, 1.08f, Mathf.SmoothStep(0f, 1f, t)) + pulse;
-            transform.localScale = initialScale * sweepScale;
-            transform.position = initialPosition + transform.right * Mathf.Lerp(0f, forwardDrift, t);
+            transform.localScale = new Vector3(
+                initialScale.x * widthScale,
+                initialScale.y * lengthScale,
+                initialScale.z);
+            transform.position = initialPosition + (Vector3)(direction * Mathf.Lerp(-0.16f, forwardDrift, t));
 
             if (spriteRenderer != null)
             {
                 Color color = initialColor;
-                float fade = t < 0.62f ? 1f : 1f - Mathf.SmoothStep(0f, 1f, (t - 0.62f) / 0.38f);
-                color.a = initialColor.a * fade;
+                float fadeIn = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / 0.08f));
+                float fadeOut = 1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - 0.58f) / 0.42f));
+                color.a = initialColor.a * fadeIn * fadeOut;
                 spriteRenderer.color = color;
             }
 
@@ -583,23 +581,6 @@ namespace Dungeon2D
             {
                 Destroy(gameObject);
             }
-        }
-
-        private void ApplyAnimationFrame(float normalizedTime)
-        {
-            if (spriteRenderer == null || frames == null || frames.Length == 0)
-            {
-                return;
-            }
-
-            int frameIndex = Mathf.Min(frames.Length - 1, Mathf.FloorToInt(normalizedTime * frames.Length));
-            if (frameIndex == lastFrameIndex || frames[frameIndex] == null)
-            {
-                return;
-            }
-
-            spriteRenderer.sprite = frames[frameIndex];
-            lastFrameIndex = frameIndex;
         }
     }
 

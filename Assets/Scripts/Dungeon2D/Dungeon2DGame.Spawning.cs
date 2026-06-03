@@ -276,21 +276,59 @@ namespace Dungeon2D
                 return;
             }
 
-            bool faceLeft = direction.x < -0.01f;
-            Sprite[] frames = Art.GetSlashAnimationFrames();
-            Sprite firstFrame = frames != null && frames.Length > 0 ? frames[0] : Art.GetSlashSprite();
-            if (firstFrame == null)
+            Vector2 safeDirection = direction.sqrMagnitude > 0.001f ? direction.normalized : Vector2.right;
+            Sprite trailSprite = Art.GetStabTrailSprite();
+            if (trailSprite == null)
             {
                 return;
             }
 
-            GameObject slash = CreateSpriteObject("SwordSlash", firstFrame, worldRoot, center, 30);
-            slash.transform.localScale = Vector3.one * 1.32f;
-            slash.transform.rotation = Quaternion.identity;
-            SpriteRenderer renderer = slash.GetComponent<SpriteRenderer>();
-            renderer.color = Color.white;
-            renderer.flipX = faceLeft;
-            slash.AddComponent<Dungeon2DSlashEffect>().Configure(frames);
+            Vector2 trailCenter = center - safeDirection * 0.38f;
+            SpawnStabTrailLayer(
+                "SwordStabTrailGlow",
+                trailSprite,
+                trailCenter,
+                safeDirection,
+                new Vector2(0.82f, 3.12f),
+                new Color(1f, 0.39f, 0.02f, 0.6f),
+                29,
+                0.22f,
+                0.5f);
+
+            SpawnStabTrailLayer(
+                "SwordStabTrailCore",
+                trailSprite,
+                trailCenter + safeDirection * 0.08f,
+                safeDirection,
+                new Vector2(0.32f, 2.72f),
+                new Color(1f, 0.68f, 0.16f, 0.96f),
+                30,
+                0.18f,
+                0.42f);
+        }
+
+        private void SpawnStabTrailLayer(
+            string name,
+            Sprite sprite,
+            Vector2 center,
+            Vector2 direction,
+            Vector2 size,
+            Color color,
+            int sortingOrder,
+            float duration,
+            float forwardDrift)
+        {
+            GameObject trail = CreateSpriteObject(name, sprite, worldRoot, center, sortingOrder);
+            ScaleSpriteToWorldSize(trail, size);
+            trail.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f);
+
+            SpriteRenderer renderer = trail.GetComponent<SpriteRenderer>();
+            if (renderer != null)
+            {
+                renderer.color = color;
+            }
+
+            trail.AddComponent<Dungeon2DSlashEffect>().Configure(direction, duration, forwardDrift);
         }
 
         private void SpawnDashRuneMotes(Vector2 position, Vector2 direction)

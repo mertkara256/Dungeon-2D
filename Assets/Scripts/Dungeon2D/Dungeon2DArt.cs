@@ -42,6 +42,7 @@ namespace Dungeon2D
         private Texture2D heroMeleeAttackTexture;
         private Sprite projectileSprite;
         private Sprite slashSprite;
+        private Sprite stabTrailSprite;
         private Sprite[] slashAnimationFrames;
         private Sprite fallbackSprite;
 
@@ -85,6 +86,17 @@ namespace Dungeon2D
         {
             EnsureLoaded();
             return projectileSprite != null ? projectileSprite : GetEnvironmentSprite(EnvironmentSpriteId.Projectile);
+        }
+
+        public Sprite GetStabTrailSprite()
+        {
+            EnsureLoaded();
+            if (stabTrailSprite == null)
+            {
+                stabTrailSprite = BuildStabTrailSprite();
+            }
+
+            return stabTrailSprite != null ? stabTrailSprite : fallbackSprite;
         }
 
         public Sprite GetSlashSprite()
@@ -540,6 +552,37 @@ namespace Dungeon2D
         private static string AnimationKey(CharacterSpriteId id, DungeonSpriteAnimation animation)
         {
             return id + "_" + animation;
+        }
+
+        private static Sprite BuildStabTrailSprite()
+        {
+            const int width = 96;
+            const int height = 192;
+            Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+            texture.wrapMode = TextureWrapMode.Clamp;
+            texture.filterMode = FilterMode.Bilinear;
+            Color[] pixels = new Color[width * height];
+
+            for (int y = 0; y < height; y++)
+            {
+                float v = (y + 0.5f) / height;
+                float verticalTaper = Mathf.Sin(v * Mathf.PI);
+                float halfWidth = Mathf.Lerp(0.08f, 0.46f, Mathf.Pow(verticalTaper, 0.72f));
+                float lengthAlpha = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(v / 0.12f))
+                    * (1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((v - 0.88f) / 0.12f)));
+
+                for (int x = 0; x < width; x++)
+                {
+                    float u = Mathf.Abs((x + 0.5f) / width - 0.5f);
+                    float widthAlpha = 1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(u / halfWidth));
+                    float coreAlpha = Mathf.Pow(widthAlpha, 1.35f) * lengthAlpha;
+                    pixels[y * width + x] = new Color(1f, 1f, 1f, coreAlpha);
+                }
+            }
+
+            texture.SetPixels(pixels);
+            texture.Apply();
+            return Sprite.Create(texture, new Rect(0f, 0f, width, height), new Vector2(0.5f, 0.5f), 96f, 0, SpriteMeshType.FullRect);
         }
 
         private static Sprite BuildFallbackSprite()
