@@ -79,3 +79,7 @@ Assets/
 
 - Unity 6.3 with the Universal Render Pipeline (2D Renderer)
 - Unity Input System
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
